@@ -1,0 +1,41 @@
+# Hooks are check-only. Local runs and CI both execute
+# `python3 scripts/run_repository_security.py`, which puts the pinned
+# gitleaks and actionlint binaries on PATH and invokes these hooks.
+#
+# Installing this file does not activate hooks. See CONTRIBUTING.md.
+#
+# Large-file limit is 5 MiB (5120 KiB). Add a file-specific exclude only for
+# one reviewed bundled asset. Do not exclude an assets directory.
+
+minimum_pre_commit_version: "4.0.0"
+fail_fast: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # v6.0.0
+    hooks:
+      - id: check-merge-conflict
+        # Without this flag the hook exits 0 unless a merge is already in progress,
+        # so committed conflict markers would pass CI.
+        args: ["--assume-in-merge"]
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+        # --enforce-all checks every file the runner passes in. Without it the
+        # hook only looks at the staged diff, so CI on a clean checkout never
+        # inspects files that are already in the tree.
+        args: ["--enforce-all", "--maxkb=5120"]
+
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: gitleaks detect
+        entry: gitleaks detect --source . --no-git --redact --verbose --exit-code 1
+        language: system
+        pass_filenames: false
+      - id: actionlint
+        name: actionlint
+        entry: actionlint
+        language: system
+        pass_filenames: false
+        files: ^\.github/workflows/

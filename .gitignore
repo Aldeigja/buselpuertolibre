@@ -1,0 +1,35 @@
+# Local-only. These stay on disk and are omitted from the public repository.
+.cursor/
+scripts/
+.vscode/
+.editorconfig
+AGENTS.md
+
+# Local security-tool cache created by scripts/run_repository_security.py
+.tools/
+
+# Android / Gradle local state. No project exists yet; these stay ignored
+# so the first build cannot commit machine paths or outputs.
+.gradle/
+build/
+**/build/
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.hprof
+*.keystore
+*.jks
+google-services.json
+
+# OS and Python
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+venv/

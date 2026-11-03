@@ -1,0 +1,16 @@
+# Extends the rules compiled into gitleaks 8.30.1.
+# Allowlist entries are appended to the default allowlists; they do not replace them.
+# Do not add an allowlist for a real finding without the advisory-style review
+# described in docs/quality-setup.md.
+
+title = "El Puerto Bus repository"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Local tool cache and workspace virtualenv. Not application source."
+paths = [
+    '''(?:^|/)\.tools(?:/|$)''',
+    '''(?:^|/)\.venv(?:/|$)''',
+]
