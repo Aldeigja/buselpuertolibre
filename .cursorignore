@@ -1,0 +1,19 @@
+# Keep agent context off maintainer-only and large local data.
+# pipeline/, docs/, and .github/ stay visible for milestone work.
+
+local/
+.tools/
+.venv/
+venv/
+*.pdf
+*.db
+*.sqlite
+*.keystore
+*.jks
+*.pem
+*.key
+*.p12
+*.pfx
+*.bak
+.env
+.env.*

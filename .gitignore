@@ -38,3 +38,19 @@ venv/
 # Local timetable sources, OSM extracts, and generated review files.
 # The pipeline reads and writes these on this machine. They are not published.
 local/
+
+# Secrets, keys, and skill registry lockfiles
+*.pdf
+*.db
+*.sqlite
+*.pem
+*.key
+*.p12
+*.pfx
+.env
+.env.*
+.skills.json
+skills-lock.json
+skills-lock.*
+id_rsa
+id_ed25519

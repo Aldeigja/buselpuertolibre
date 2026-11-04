@@ -1,6 +1,7 @@
-# Hooks are check-only. Local runs and CI both execute
-# `python3 scripts/run_repository_security.py`, which puts the pinned
-# gitleaks and actionlint binaries on PATH and invokes these hooks.
+# Hooks are check-only. GitHub Actions and a fresh clone run pre-commit with
+# pinned gitleaks and actionlint on PATH (see repository-security.yml).
+# Maintainers also use gitignored scripts/run_repository_security.py for the
+# same hooks plus tool install and a custom pre-push boundary wrapper.
 #
 # Installing this file does not activate hooks. See CONTRIBUTING.md.
 #
@@ -28,6 +29,12 @@ repos:
 
   - repo: local
     hooks:
+      - id: publish-boundary
+        name: publish boundary allowlist
+        entry: python3 .github/check_publish_boundary.py
+        language: system
+        pass_filenames: false
+        always_run: true
       - id: gitleaks
         name: gitleaks detect
         entry: gitleaks detect --source . --no-git --redact --verbose --exit-code 1

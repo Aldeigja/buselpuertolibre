@@ -9,8 +9,16 @@ title = "El Puerto Bus repository"
 useDefault = true
 
 [allowlist]
-description = "Local tool cache and workspace virtualenv. Not application source."
+description = "Local tool cache, virtualenv, and Python bytecode. Not published source."
 paths = [
     '''(?:^|/)\.tools(?:/|$)''',
     '''(?:^|/)\.venv(?:/|$)''',
+    '''(?:^|/)__pycache__(?:/|$)''',
+    '''(?:^|/)local(?:/|$)''',
 ]
+
+[[rules]]
+id = "machine-home-path"
+description = "Absolute home or user profile paths in tracked content."
+regex = '''(?:\x2FUsers\x2F[^/\s"']+\x2F|\x2Fhome\x2F[^/\s"']+\x2F|C:\\Users\\[^\\\s"']+\\)'''
+tags = ["path", "privacy"]

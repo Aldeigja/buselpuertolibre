@@ -2,7 +2,9 @@
 
 This repository is the home of El Puerto Bus. The application directory `buselpuertolibre/` does not contain a Gradle project yet. Commands below are split into checks that exist today and checks that stay blocked until that project exists.
 
-`.cursor/`, `scripts/`, `.vscode/`, `.editorconfig`, and `AGENTS.md` are gitignored. They are not in the public repository. A clone does not receive `scripts/run_repository_security.py`; GitHub Actions runs the same hooks from `.github/workflows/repository-security.yml`.
+`.cursor/`, `scripts/`, `.vscode/`, `.editorconfig`, and `AGENTS.md` are gitignored. They are not in the public repository. A clone does not receive `scripts/run_repository_security.py`.
+
+**Public CI and fresh clones** run `.pre-commit-config.yaml` (including `.github/check_publish_boundary.py`) from `.github/workflows/repository-security.yml`. **Maintainers** use gitignored `scripts/run_repository_security.py` to install pinned tools, run the same hooks on the full working tree, and register a custom pre-push boundary hook.
 
 Do not commit, push, or change GitHub settings as part of ordinary development unless the maintainer asked for that.
 
@@ -10,33 +12,48 @@ Do not commit, push, or change GitHub settings as part of ordinary development u
 
 | Requirement | Today |
 |---|---|
-| Git | Initialize this directory with `git init -b main` if `.git` is missing. Do not commit from an ancestor directory. |
-| Python | 3.12. Repository checks use `.venv`. Android compilation does not. |
-| JDK | Temurin 21.0.13+9 for future Gradle builds. `JAVA_HOME` points at `~/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home`. Temurin 27 remains installed and is not on `PATH`. The Gradle project still does not exist, so it has not selected a toolchain of its own. |
-| Android SDK | `ANDROID_HOME` and `ANDROID_SDK_ROOT` are `~/Library/Android/sdk`. Installed: cmdline-tools 23.0, platform `android-37.2`, build-tools `37.0.0`, platform-tools `37.0.1`. No emulator image. |
+| Git | Repository root must be this project. Do not commit from an ancestor directory. |
+| Python | 3.12 for repository-security checks. Android compilation does not use Python. |
+| JDK | JDK 21 when a Gradle project exists. Do not write install paths into tracked files. |
+| Android SDK | Required only after the Gradle project exists. Do not write SDK paths into tracked files. |
 | Network | First repository-security run downloads pinned tools and the pre-commit hook environment. Later runs reuse `.tools/`, `.venv`, and the pre-commit cache. |
+
+Machine-specific JDK and SDK inventory belongs in gitignored `local/maintainer/quality-host.md` on the maintainer disk, not in this file.
 
 ## First-time setup
 
-From the repository root:
+From the repository root (maintainer machine only, after clone):
 
 ```bash
-git init -b main
 python3 scripts/run_repository_security.py --install-hooks
 ```
 
 Windows PowerShell:
 
 ```powershell
-git init -b main
 py -3 scripts/run_repository_security.py --install-hooks
 ```
 
-`--install-hooks` registers the Git hook. Copying `.pre-commit-config.yaml` into the tree does not install it. The hook runs the same pre-commit checks as CI, but only after this command.
+`--install-hooks` registers:
 
-The hook is intentionally lightweight: merge-conflict markers, YAML, TOML, files larger than 5 MiB, Gitleaks, and actionlint. Conflict markers are scanned on every run (`--assume-in-merge`); the upstream hook otherwise exits 0 unless a merge is already in progress. The size check uses `--enforce-all`, so it inspects the files the runner passes in rather than only the staged diff. This is not a substitute for the Android quality gate.
+- a **pre-commit** hook via `pre-commit install --hook-type pre-commit --install-hooks`
+- a **pre-push** hook that runs `scripts/check_publish_boundary.py --pre-push`
+
+Do **not** run `pre-commit install --hook-type pre-push`; it would overwrite the pre-push hook. pre-commit’s pre-push hook does not receive ref pairs the boundary check needs.
+
+Copying `.pre-commit-config.yaml` into the tree does not install hooks.
 
 ## Checks that run today
+
+**On GitHub and any clone** (no `scripts/` required):
+
+```bash
+pre-commit run --all-files --show-diff-on-failure
+```
+
+CI also puts pinned gitleaks and actionlint on `PATH` before that command. See `.github/workflows/repository-security.yml`.
+
+**On the maintainer machine** (full tree, tool install, boundary re-check):
 
 ```bash
 python3 scripts/run_repository_security.py
@@ -48,15 +65,13 @@ Windows:
 py -3 scripts/run_repository_security.py
 ```
 
-This is the current pre-push command. It installs, when missing:
+The maintainer runner installs, when missing:
 
 - pre-commit 4.7.0 into `.venv`
 - gitleaks 8.30.1 into `.tools/bin`, after verifying the published SHA-256
 - actionlint 1.7.12 into `.tools/bin`, after verifying the published SHA-256
 
-It then runs `pre-commit run --show-diff-on-failure --files …` on every tracked and untracked file that Git does not ignore. An empty file list fails the script. `pre-commit run --all-files` is not used: with no commit yet it sees nothing and exits 0.
-
-CI calls the same script. The checks do not rewrite files. A failing hook fails the run. The installed Git hook still receives only the staged files for that commit, which is the pre-commit framework's own behavior.
+It runs pre-commit on every tracked and untracked file that Git does not ignore, then runs `.github/check_publish_boundary.py`. An empty file list fails the script. The installed pre-commit hook still receives only staged files for that commit; use the maintainer runner before push for a full-tree scan.
 
 There is no formatter to apply yet. When Spotless is added with the Android project, local formatting will be `./gradlew spotlessApply` and CI will run `spotlessCheck` without rewriting the checkout.
 
@@ -91,11 +106,10 @@ Emulator or device setup for `qualityAndroidTest` is also blocked. One pinned em
 
 ## Security, dependencies, and licenses
 
-Current secret scan:
+Current secret and publish-boundary scans:
 
-```bash
-python3 scripts/run_repository_security.py
-```
+- **CI / clone:** pre-commit (`gitleaks`, actionlint, publish-boundary, merge-conflict, YAML/TOML, large files)
+- **Maintainer:** `python3 scripts/run_repository_security.py` (same hooks plus explicit boundary pass)
 
 Gitleaks reads `.gitleaks.toml`, which extends the default rules shipped in the pinned binary. The local allowlist paths are `.tools/` and `.venv`. Default upstream path skips still apply, including images, fonts, the Gradle wrapper, and `verification-metadata.xml`. Those skips are a scanner limitation, not an approval to hide secrets in those files.
 
@@ -118,23 +132,25 @@ Initial dependency-verification metadata needs human review. Do not bulk-approve
 | pre-commit | Terminal output. No report file. |
 | gitleaks | Terminal output, secrets redacted. |
 | actionlint | Terminal output. |
+| publish-boundary | Terminal output. |
 | Future Gradle reports | To be documented with the tasks that create them. HTML/XML reports must not be committed. |
 
 ## Updating pinned tools
 
 1. Read the upstream release notes and checksum file.
-2. Update the version, URL, and SHA-256 in `scripts/run_repository_security.py`.
-3. Update the hook `rev` in `.pre-commit-config.yaml` when the hook repository changes, using the commit the release tag points at.
-4. Update third-party Actions in `.github/workflows/repository-security.yml` to the full commit SHA of the reviewed release.
-5. Re-run `python3 scripts/run_repository_security.py`.
-6. Record the review in the pull request. Do not copy an example SHA.
+2. Update the version, URL, and SHA-256 in gitignored `scripts/run_repository_security.py` (all platforms).
+3. Update Linux x64 checksums in `.github/workflows/repository-security.yml` for CI.
+4. Update the hook `rev` in `.pre-commit-config.yaml` when the hook repository changes, using the commit the release tag points at.
+5. Update third-party Actions in `.github/workflows/repository-security.yml` to the full commit SHA of the reviewed release.
+6. Re-run `python3 scripts/run_repository_security.py` on the maintainer machine.
+7. Record the review in the pull request. Do not copy an example SHA.
 
 ## Network
 
 | Action | Network |
 |---|---|
-| `python3 scripts/run_repository_security.py` on a warm `.tools/`, `.venv`, and pre-commit cache | Not required |
-| First run, or a version bump | GitHub release downloads and PyPI |
+| `pre-commit run --all-files` on a warm cache | Usually not required |
+| First maintainer security run, or a version bump | GitHub release downloads and PyPI |
 | Future `./gradlew qualityCheck` | Gradle distributions, Maven dependencies, and wrapper validation need network unless the cache is already populated |
 | Future OSV-Scanner | Network, for the vulnerability database, including on a schedule |
 | Application runtime | Must stay offline. Build-time downloads do not change that |
