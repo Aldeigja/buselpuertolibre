@@ -33,3 +33,8 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+*.bak
+
+# Local timetable sources, OSM extracts, and generated review files.
+# The pipeline reads and writes these on this machine. They are not published.
+local/

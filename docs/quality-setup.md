@@ -1,6 +1,6 @@
 # Quality setup
 
-Inspection date: 2026-11-04. Repository root: `/Users/george/vibecoding/android`.
+Inspection date: 2026-11-04. Paths below are relative to the repository root.
 
 `.cursor/`, `scripts/`, `.vscode/`, `.editorconfig`, and `AGENTS.md` are kept on the maintainer machine and omitted from the public history. The published security job does not depend on `scripts/`.
 

@@ -1,0 +1,79 @@
+{
+  "version": 0.6,
+  "generator": "test-fixture",
+  "elements": [
+    {
+      "type": "node",
+      "id": 1001,
+      "lat": 36.601,
+      "lon": -6.223,
+      "tags": {"name": "Plaza de Toros", "highway": "bus_stop", "wheelchair": "yes", "public_transport": "platform", "ref": "PT-1"}
+    },
+    {
+      "type": "node",
+      "id": 1002,
+      "lat": 36.602,
+      "lon": -6.224,
+      "tags": {"name": "Fuentebravía", "highway": "bus_stop"}
+    },
+    {
+      "type": "node",
+      "id": 2001,
+      "lat": 36.6015,
+      "lon": -6.2235
+    },
+    {
+      "type": "node",
+      "id": 2002,
+      "lat": 36.6018,
+      "lon": -6.2238
+    },
+    {
+      "type": "node",
+      "id": 2003,
+      "lat": 36.6021,
+      "lon": -6.2241
+    },
+    {
+      "type": "way",
+      "id": 3001,
+      "nodes": [2001, 2002, 2003]
+    },
+    {
+      "type": "relation",
+      "id": 9001,
+      "tags": {
+        "type": "route",
+        "route": "bus",
+        "ref": "6",
+        "name": "Plaza de Toros > Fuentebravía",
+        "from": "Plaza de Toros",
+        "to": "Fuentebravía",
+        "colour": "#95e137"
+      },
+      "members": [
+        {"type": "node", "ref": 1001, "role": "platform"},
+        {"type": "node", "ref": 1002, "role": "platform"},
+        {"type": "way", "ref": 3001, "role": ""}
+      ]
+    },
+    {
+      "type": "relation",
+      "id": 9002,
+      "tags": {
+        "type": "route",
+        "route": "bus",
+        "ref": "6",
+        "name": "Fuentebravía > Plaza de Toros",
+        "from": "Fuentebravía",
+        "to": "Plaza de Toros",
+        "colour": "#95e137"
+      },
+      "members": [
+        {"type": "node", "ref": 1002, "role": "platform"},
+        {"type": "node", "ref": 1001, "role": "platform"},
+        {"type": "way", "ref": 3001, "role": "backward"}
+      ]
+    }
+  ]
+}
