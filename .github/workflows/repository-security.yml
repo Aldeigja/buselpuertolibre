@@ -1,7 +1,6 @@
 # Repository hygiene only. Android format, analysis, unit-test, build,
-# license, vulnerability, and emulator jobs are intentionally absent until
-# buselpuertolibre contains a Gradle project. Do not mark those checks as
-# successful from this workflow.
+# license, vulnerability, and emulator jobs are not part of this workflow.
+# Do not mark those checks as successful from here.
 
 name: repository-security
 

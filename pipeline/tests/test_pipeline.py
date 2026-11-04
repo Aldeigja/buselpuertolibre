@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 from elpuerto.build import PipelinePaths, run_pipeline
+from elpuerto.route_lines import expected_route_lines
 from elpuerto.junta import EXPECTED_2026, EXPECTED_2027_REGIONAL
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -38,6 +39,9 @@ class PipelineIntegrationTest(unittest.TestCase):
             self.assertTrue(paths.review_geojson.is_file())
             self.assertTrue(paths.unlocated_csv.is_file())
             self._assert_db_invariants(paths.db_path)
+            self._assert_route_lines_match_review(
+                paths.db_path, paths.review_geojson
+            )
 
     def test_override_replaces_osm_coordinate(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -127,6 +131,15 @@ class PipelineIntegrationTest(unittest.TestCase):
                 ).fetchall()
             }
             self.assertEqual(lines, set(range(1, 8)))
+
+            stop_id_notnull = conn.execute(
+                "SELECT \"notnull\" FROM pragma_table_info('itinerary_stops') WHERE name = 'stop_id'"
+            ).fetchone()[0]
+            self.assertEqual(
+                stop_id_notnull,
+                1,
+                "stop_id must be NOT NULL so Room accepts the packaged database",
+            )
 
             ret_departures = conn.execute(
                 "SELECT COUNT(*) FROM departures WHERE column_label LIKE '%Ret%'"
@@ -274,6 +287,40 @@ class PipelineIntegrationTest(unittest.TestCase):
             """,
             (line, label),
         ).fetchall()
+
+    def _assert_route_lines_match_review(
+        self, db_path: Path, review_path: Path
+    ) -> None:
+        expected = {
+            (row.line, row.direction): (
+                row.geometry_type,
+                row.coordinates_json,
+            )
+            for row in expected_route_lines(review_path)
+        }
+        conn = sqlite3.connect(db_path)
+        try:
+            rows = conn.execute(
+                """
+                SELECT line, direction, geometry_type, coordinates_json
+                FROM route_lines ORDER BY line, direction
+                """
+            ).fetchall()
+        finally:
+            conn.close()
+        self.assertEqual(len(rows), 9)
+        for line, direction, geometry_type, coordinates_json in rows:
+            key = (line, direction)
+            self.assertIn(key, expected, f"missing review geometry for L{line} {direction}")
+            exp_type, exp_coords = expected[key]
+            self.assertEqual(geometry_type, exp_type)
+            self.assertEqual(coordinates_json, exp_coords)
+        for line in range(1, 6):
+            dirs = {d for ln, d in expected if ln == line}
+            self.assertEqual(dirs, {"outbound"})
+        for line in (6, 7):
+            dirs = {d for ln, d in expected if ln == line}
+            self.assertEqual(dirs, {"outbound", "inbound"})
 
     def _assert_bound(
         self,

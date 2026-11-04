@@ -1,6 +1,6 @@
 # Contributing
 
-This repository is the home of El Puerto Bus. The application directory `buselpuertolibre/` does not contain a Gradle project yet. Commands below are split into checks that exist today and checks that stay blocked until that project exists.
+This repository is the home of El Puerto Bus. `buselpuertolibre/` is the Gradle project. Commands below are split into checks that exist today and checks that stay blocked.
 
 `.cursor/`, `scripts/`, `.vscode/`, `.editorconfig`, and `AGENTS.md` are gitignored. They are not in the public repository. A clone does not receive `scripts/run_repository_security.py`.
 
@@ -14,8 +14,8 @@ Do not commit, push, or change GitHub settings as part of ordinary development u
 |---|---|
 | Git | Repository root must be this project. Do not commit from an ancestor directory. |
 | Python | 3.12 for repository-security checks. Android compilation does not use Python. |
-| JDK | JDK 21 when a Gradle project exists. Do not write install paths into tracked files. |
-| Android SDK | Required only after the Gradle project exists. Do not write SDK paths into tracked files. |
+| JDK | JDK 21 for Gradle. Do not write install paths into tracked files. |
+| Android SDK | Required to compile the app. Do not write SDK paths into tracked files. |
 | Network | First repository-security run downloads pinned tools and the pre-commit hook environment. Later runs reuse `.tools/`, `.venv`, and the pre-commit cache. |
 
 Machine-specific JDK and SDK inventory belongs in gitignored `local/maintainer/quality-host.md` on the maintainer disk, not in this file.
@@ -89,7 +89,7 @@ Windows:
 .\gradlew.bat qualityCheck
 ```
 
-That aggregate task is not implemented. Running `./gradlew` today fails because there is no wrapper. The intended split, once modules and variants exist, is:
+That aggregate task is not implemented. The wrapper is in `buselpuertolibre/`. Local checks that exist today are `./gradlew testDebugUnitTest` and `./gradlew assembleDebug` from that directory. The intended split is:
 
 | Task | Role |
 |---|---|
@@ -102,7 +102,7 @@ That aggregate task is not implemented. Running `./gradlew` today fails because 
 
 Do not add these tasks as empty successes.
 
-Emulator or device setup for `qualityAndroidTest` is also blocked. One pinned emulator configuration belongs in CI only after Room asset tests or other instrumented tests exist. There is no `transit.db`, Room builder, RapTOR package, or GTFS parser to test.
+Emulator images are not part of CI. `transit.db` and the municipal PMTiles stay on the maintainer machine and are copied into the app at build time. RapTOR is not in this tree.
 
 ## Security, dependencies, and licenses
 

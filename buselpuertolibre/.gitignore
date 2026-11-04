@@ -1,0 +1,5 @@
+/build
+/app/build
+/app/src/main/assets/transit.db
+/app/src/main/assets/el_puerto.pmtiles
+local.properties

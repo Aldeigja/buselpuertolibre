@@ -6,7 +6,7 @@ Inspection date: 2026-11-04. Paths below are relative to the repository root unl
 
 ## 1. Repository findings
 
-The project root contains an empty application placeholder under `buselpuertolibre/`. There is no Android application, Gradle wrapper, settings file, version catalog, convention plugin, Kotlin source, test, Room schema, or `app/src/main/assets/transit.db`.
+`buselpuertolibre/` contains the Gradle project: one app module, a wrapper, Kotlin, Compose, Room, and host unit tests. `transit.db` and the municipal PMTiles are gitignored and copied in at build time. They are not in the public tree.
 
 Absent, so nothing was preserved or duplicated from a prior tree:
 
@@ -16,7 +16,7 @@ Absent, so nothing was preserved or duplicated from a prior tree:
 
 ## 2. Selected tool versions
 
-Versions below are the ones this repository executes in CI. Android compiler versions are deliberately not selected; there is no build to stay compatible with.
+Versions below are the ones this repository executes in CI. The Android compiler versions live in the Gradle project and are not run by the security workflow.
 
 | Tool | Pin | Why this one |
 |---|---|---|
@@ -81,9 +81,9 @@ The workflow triggers are `pull_request`, `push` to `main`, and `workflow_dispat
 
 ## 4. Environment limitations
 
-- No emulator image or device in the default CI image. Instrumented Room tests cannot run in CI until configured.
-- Gradle cannot run because there is no wrapper or project.
-- No formatting, detekt, lint, unit tests, license, lock, or vulnerability gates were executed for Android. They are not configured either.
+- No emulator image in the default CI image. The security workflow does not run Gradle.
+- The Gradle wrapper is in `buselpuertolibre/`. Local host tests and `assembleDebug` are separate from this security job.
+- Formatting, detekt, lint, license, lock, and vulnerability gates are not configured. The security workflow does not run them.
 - GitHub-hosted CI status for `repository-security` depends on the next push after boundary hardening lands.
 - Hook configuration is in-repo. Maintainers run `python3 scripts/run_repository_security.py --install-hooks` to register pre-commit and pre-push hooks.
 - The first security run needs network access to GitHub and PyPI. The application runtime is still required to be offline once the app exists.

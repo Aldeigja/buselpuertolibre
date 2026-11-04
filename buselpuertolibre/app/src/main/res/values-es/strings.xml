@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Bus El Puerto Libre</string>
+    <string name="osm_attribution">© OpenStreetMap contributors</string>
+    <string name="season_title">Invierno 2026/2027</string>
+    <string name="line_label">Línea %1$d</string>
+    <string name="next_departures">Próximas salidas</string>
+    <string name="full_timetable">Horario completo</string>
+    <string name="no_printed_clock">Esta parada no tiene hora impresa en el horario.</string>
+    <string name="line_closed_today">La línea %1$d no circula hoy.</string>
+    <string name="no_more_departures_today">No quedan salidas hoy en esta parada.</string>
+    <string name="profile_laborables">Laborables</string>
+    <string name="profile_sabados">Sábados</string>
+    <string name="profile_festivos">Domingos y festivos</string>
+</resources>

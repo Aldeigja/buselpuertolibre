@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Bus El Puerto Libre</string>
+    <string name="osm_attribution">© OpenStreetMap contributors</string>
+    <string name="season_title">Winter 2026/2027</string>
+    <string name="line_label">Line %1$d</string>
+    <string name="next_departures">Next departures</string>
+    <string name="full_timetable">Full timetable</string>
+    <string name="no_printed_clock">This stop has no printed clock in the timetable.</string>
+    <string name="line_closed_today">Line %1$d does not run today.</string>
+    <string name="no_more_departures_today">No more departures today at this stop.</string>
+    <string name="profile_laborables">Weekdays</string>
+    <string name="profile_sabados">Saturday</string>
+    <string name="profile_festivos">Sunday and holidays</string>
+</resources>

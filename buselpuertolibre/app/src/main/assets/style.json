@@ -1,0 +1,102 @@
+{
+  "version": 8,
+  "name": "El Puerto offline",
+  "sources": {
+    "basemap": {
+      "type": "vector",
+      "url": "pmtiles://asset://el_puerto.pmtiles"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": { "background-color": "#e7e1d6" }
+    },
+    {
+      "id": "water",
+      "type": "fill",
+      "source": "basemap",
+      "source-layer": "water",
+      "paint": { "fill-color": "#9ec9e2" }
+    },
+    {
+      "id": "parks",
+      "type": "fill",
+      "source": "basemap",
+      "source-layer": "parks",
+      "paint": { "fill-color": "#b7d7a8" }
+    },
+    {
+      "id": "buildings",
+      "type": "fill",
+      "source": "basemap",
+      "source-layer": "buildings",
+      "minzoom": 14,
+      "paint": {
+        "fill-color": "#ddd6c8",
+        "fill-outline-color": "#c9c1b2"
+      }
+    },
+    {
+      "id": "streets-casing",
+      "type": "line",
+      "source": "basemap",
+      "source-layer": "streets",
+      "layout": { "line-cap": "round", "line-join": "round" },
+      "paint": {
+        "line-color": "#b9b2a4",
+        "line-width": [
+          "interpolate", ["linear"], ["zoom"],
+          12, ["match", ["get", "highway"],
+            ["motorway", "trunk", "primary", "secondary", "motorway_link", "trunk_link", "primary_link", "secondary_link"], 2.2,
+            ["tertiary", "tertiary_link", "residential", "unclassified", "living_street"], 1.2,
+            0.4],
+          15, ["match", ["get", "highway"],
+            ["motorway", "trunk", "primary", "secondary", "motorway_link", "trunk_link", "primary_link", "secondary_link"], 7,
+            ["tertiary", "tertiary_link", "residential", "unclassified", "living_street", "service"], 4.5,
+            ["pedestrian", "footway", "path", "cycleway"], 1.6,
+            1],
+          17, ["match", ["get", "highway"],
+            ["motorway", "trunk", "primary", "secondary", "motorway_link", "trunk_link", "primary_link", "secondary_link"], 14,
+            ["tertiary", "tertiary_link", "residential", "unclassified", "living_street", "service"], 9,
+            2]
+        ]
+      }
+    },
+    {
+      "id": "streets",
+      "type": "line",
+      "source": "basemap",
+      "source-layer": "streets",
+      "layout": { "line-cap": "round", "line-join": "round" },
+      "paint": {
+        "line-color": [
+          "match", ["get", "highway"],
+          ["motorway", "motorway_link", "trunk", "trunk_link"], "#e892a2",
+          ["primary", "primary_link"], "#f4b96a",
+          ["secondary", "secondary_link"], "#f7e07a",
+          ["tertiary", "tertiary_link", "residential", "unclassified", "living_street", "service", "pedestrian"], "#ffffff",
+          ["footway", "path", "cycleway", "steps"], "#d7d1c6",
+          "#ffffff"
+        ],
+        "line-width": [
+          "interpolate", ["linear"], ["zoom"],
+          12, ["match", ["get", "highway"],
+            ["motorway", "trunk", "primary", "secondary", "motorway_link", "trunk_link", "primary_link", "secondary_link"], 1.2,
+            ["tertiary", "tertiary_link", "residential", "unclassified", "living_street"], 0.5,
+            0.15],
+          15, ["match", ["get", "highway"],
+            ["motorway", "trunk", "primary", "secondary", "motorway_link", "trunk_link", "primary_link", "secondary_link"], 4.5,
+            ["tertiary", "tertiary_link", "residential", "unclassified", "living_street", "service"], 2.8,
+            ["pedestrian", "footway", "path", "cycleway"], 1,
+            0.6],
+          17, ["match", ["get", "highway"],
+            ["motorway", "trunk", "primary", "secondary", "motorway_link", "trunk_link", "primary_link", "secondary_link"], 10,
+            ["tertiary", "tertiary_link", "residential", "unclassified", "living_street", "service"], 6,
+            1.4]
+        ]
+      }
+    }
+  ]
+}

@@ -30,6 +30,7 @@ from elpuerto.osm import (
     save_osm_snapshot,
 )
 from elpuerto.overrides import load_overrides, unknown_override_ids
+from elpuerto.route_lines import route_lines_from_review
 from elpuerto.winter_pdf import fold_column, parse_winter_pdf
 
 SEASON_START = "2026-08-31"
@@ -220,6 +221,8 @@ def run_pipeline(
     else:
         _write_review_geojson(paths.review_geojson, itinerary, located)
     _write_unlocated_csv(paths.unlocated_csv, unlocated_rows)
+    if use_osm_routes:
+        route_lines_from_review(paths.review_geojson, paths.db_path)
 
     lines_present = {s.line for s in itinerary}
     missing_lines = set(range(1, 8)) - lines_present
@@ -253,11 +256,11 @@ def _write_sqlite(
             """
             PRAGMA foreign_keys = ON;
             CREATE TABLE meta (
-              key TEXT PRIMARY KEY,
+              key TEXT NOT NULL PRIMARY KEY,
               value TEXT NOT NULL
             );
             CREATE TABLE itinerary_stops (
-              stop_id TEXT PRIMARY KEY,
+              stop_id TEXT NOT NULL PRIMARY KEY,
               line INTEGER NOT NULL,
               column_side TEXT NOT NULL,
               sequence INTEGER NOT NULL,
@@ -290,13 +293,13 @@ def _write_sqlite(
               PRIMARY KEY (line, column_label)
             );
             CREATE TABLE holidays (
-              date_iso TEXT PRIMARY KEY,
+              date_iso TEXT NOT NULL PRIMARY KEY,
               year INTEGER NOT NULL,
               description TEXT NOT NULL,
               service_profile TEXT NOT NULL DEFAULT 'festivos'
             );
             CREATE TABLE line_service_rules (
-              line INTEGER PRIMARY KEY,
+              line INTEGER NOT NULL PRIMARY KEY,
               rules_json TEXT NOT NULL
             );
             CREATE INDEX idx_departures_stop ON departures(bound_stop_id, seconds_since_midnight);

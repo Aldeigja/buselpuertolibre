@@ -144,6 +144,8 @@ def path_allowlisted(rel: str) -> bool:
         return True
     if rel.startswith("pipeline/"):
         return True
+    if rel.startswith("buselpuertolibre/"):
+        return True
     if rel.startswith("docs/"):
         return True
     if rel.startswith(".github/workflows/"):
@@ -161,6 +163,8 @@ def path_denied(rel: str) -> str | None:
             return f"denylisted name pattern {pattern!r}: {rel}"
     lower = rel.lower()
     if lower.endswith(".json"):
+        if rel == "buselpuertolibre/app/src/main/assets/style.json":
+            return None
         if not rel.startswith(FIXTURE_JSON_PREFIX):
             return f"JSON outside {FIXTURE_JSON_PREFIX}: {rel}"
         full = get_root() / rel

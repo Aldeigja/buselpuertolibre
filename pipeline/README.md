@@ -46,7 +46,8 @@ These stay in `local/` and are not committed.
 
 | Path | Role |
 | --- | --- |
-| `local/pipeline/output/transit.db` | SQLite snapshot for review and later app packaging |
+| `local/pipeline/output/transit.db` | SQLite snapshot (stops, clocks, holidays, and `route_lines` from the review map) |
+| `local/pipeline/assets/el_puerto.pmtiles` | OpenStreetMap streets, parks, water, and buildings for the app (`pipeline/build_basemap.py`, needs network once, plus `tippecanoe` and `pmtiles`) |
 | `local/pipeline/curation/stops_review.geojson` | Regenerated points and route lines |
 | `local/pipeline/curation/stops_unlocated.csv` | Stops without coordinates |
 | `local/pipeline/curation/stops_overrides.geojson` | Aligned points (edit in QGIS or geojson.io) |
