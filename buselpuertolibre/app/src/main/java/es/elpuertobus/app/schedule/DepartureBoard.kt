@@ -53,6 +53,7 @@ data class DepartureBoardResult(
 
 object DepartureBoard {
     const val LOOKBACK_MINUTES = 20
+    const val OWN_CLOCK_LOOKBACK_MINUTES = 5
     const val FEED_LIMIT = 8
     private const val LEFT_AGO_MAX_MINUTES = 30
     private const val FALLBACK_COLOUR = "#2563eb"
@@ -77,7 +78,6 @@ object DepartureBoard {
                 .filter { physicalNode(it.stopId) == node }
                 .sortedWith(compareBy({ it.line }, { it.columnSide }, { it.sequence }))
         val nowSeconds = localNow.toLocalTime().toSecondOfDay()
-        val earliest = nowSeconds - LOOKBACK_MINUTES * 60
         val trips = ArrayList<UpcomingTrip>()
         val timetable = ArrayList<PrintedTimetableLine>()
         for (occurrence in serving) {
@@ -110,6 +110,7 @@ object DepartureBoard {
             }
             val anchor = resolveAnchor(column, index, printedIds) ?: continue
             val anchorStop = column[anchor.index]
+            val earliest = nowSeconds - lookbackMinutes(anchor) * 60
             for (seconds in timesFor(input.departures, anchorStop.stopId, profile)) {
                 if (seconds < earliest) {
                     continue
@@ -149,6 +150,13 @@ object DepartureBoard {
         trip.isPast && trip.elapsedMinutes <= LEFT_AGO_MAX_MINUTES
 
     private data class Anchor(val index: Int, val stopsAway: Int, val downstream: Boolean)
+
+    private fun lookbackMinutes(anchor: Anchor): Int =
+        if (anchor.stopsAway == 0 && !anchor.downstream) {
+            OWN_CLOCK_LOOKBACK_MINUTES
+        } else {
+            LOOKBACK_MINUTES
+        }
 
     private fun resolveAnchor(
         column: List<ItineraryStopRef>,

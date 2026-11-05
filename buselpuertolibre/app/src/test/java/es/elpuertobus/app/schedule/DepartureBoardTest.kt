@@ -112,9 +112,60 @@ class DepartureBoardTest {
         assertTrue(result.trips.all { it.stopsFromAnchor == 0 && !it.downstream })
         assertEquals("Terminal Marítima", result.trips.first().upstreamStopName)
         assertEquals(listOf(clock(7, 20), clock(8, 0)), result.timetable.single().times)
-        assertEquals(listOf(clock(7, 20), clock(8, 0)), result.trips.map { it.scheduledSeconds })
-        assertTrue(result.trips.first().isPast)
-        assertFalse(result.trips.last().isPast)
+        assertEquals(listOf(clock(8, 0)), result.trips.map { it.scheduledSeconds })
+        assertFalse(result.trips.single().isPast)
+    }
+
+    @Test
+    fun ownClockHidesAfterFiveMinutesAndUpstreamKeepsTwenty() {
+        val stops =
+            listOf(
+                stop("L4_outbound_001_16", 4, 1, "Plaza de España - Santa Lucía"),
+                stop("L4_outbound_002_40", 4, 2, "San Bartolomé"),
+                stop("L1_outbound_001_10", 1, 1, "Centro"),
+                stop("L1_outbound_002_99", 1, 2, "Madrileños"),
+            )
+        val departures =
+            listOf(
+                DepartureSnapshot(4, "laborables", clock(11, 35), "L4_outbound_001_16"),
+                DepartureSnapshot(4, "laborables", clock(11, 55), "L4_outbound_001_16"),
+                DepartureSnapshot(1, "laborables", clock(11, 35), "L1_outbound_001_10"),
+            )
+        val atFiveMinutes =
+            DepartureBoard.build(
+                input(
+                    selected = "L4_outbound_001_16",
+                    stops = stops,
+                    departures = departures,
+                    now = ZonedDateTime.of(2026, 11, 5, 11, 40, 0, 0, zone),
+                ),
+            )
+        assertEquals(listOf(clock(11, 35), clock(11, 55)), atFiveMinutes.trips.map { it.scheduledSeconds })
+        assertTrue(atFiveMinutes.trips.first().isPast)
+
+        val atFifteenMinutes =
+            DepartureBoard.build(
+                input(
+                    selected = "L4_outbound_001_16",
+                    stops = stops,
+                    departures = departures,
+                    now = ZonedDateTime.of(2026, 11, 5, 11, 50, 0, 0, zone),
+                ),
+            )
+        assertEquals(listOf(clock(11, 55)), atFifteenMinutes.trips.map { it.scheduledSeconds })
+        assertEquals(listOf(clock(11, 35), clock(11, 55)), atFifteenMinutes.timetable.single().times)
+
+        val upstream =
+            DepartureBoard.build(
+                input(
+                    selected = "L1_outbound_002_99",
+                    stops = stops,
+                    departures = departures,
+                    now = ZonedDateTime.of(2026, 11, 5, 11, 50, 0, 0, zone),
+                ),
+            )
+        assertEquals(listOf(clock(11, 35)), upstream.trips.map { it.scheduledSeconds })
+        assertEquals(15, upstream.trips.single().elapsedMinutes)
     }
 
     @Test
