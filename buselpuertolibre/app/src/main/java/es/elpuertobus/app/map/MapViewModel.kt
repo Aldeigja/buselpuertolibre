@@ -16,10 +16,17 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
+data class LineSwatch(
+    val line: Int,
+    val colour: String,
+)
+
 data class MapUiState(
     val ready: Boolean = false,
     val stopsGeoJson: String = "",
     val routesGeoJson: String = "",
+    val lineSwatches: List<LineSwatch> = emptyList(),
+    val focusedLine: Int? = null,
     val errorMessage: String? = null,
     val sheet: StopSheetUiState? = null,
 )
@@ -60,6 +67,11 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                         ready = true,
                         stopsGeoJson = MapOverlayGeoJson.stopsFeatureCollection(stops),
                         routesGeoJson = MapOverlayGeoJson.routeLinesFeatureCollection(routes),
+                        lineSwatches =
+                            routes
+                                .distinctBy { it.line }
+                                .sortedBy { it.line }
+                                .map { LineSwatch(it.line, it.colour ?: "#2563eb") },
                     )
                 } finally {
                     db.close()
@@ -125,5 +137,11 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     fun dismissSheet() {
         _uiState.update { it.copy(sheet = null) }
+    }
+
+    fun onLineFocused(line: Int) {
+        _uiState.update { state ->
+            state.copy(focusedLine = if (state.focusedLine == line) null else line)
+        }
     }
 }

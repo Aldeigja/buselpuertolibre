@@ -12,6 +12,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import android.graphics.RectF
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapView
@@ -30,10 +31,14 @@ private const val OPENING_ZOOM = 13.5
 fun OfflineMapView(
     stopsGeoJson: String,
     routesGeoJson: String,
+    focusedLine: Int?,
     onStopSelected: (String) -> Unit = {},
+    onLineSelected: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val onStopSelectedState = rememberUpdatedState(onStopSelected)
+    val onLineSelectedState = rememberUpdatedState(onLineSelected)
+    val focusedLineState = rememberUpdatedState(focusedLine)
     val clickListenerAttached = remember { AtomicBoolean(false) }
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -70,18 +75,35 @@ fun OfflineMapView(
                 getMapAsync { map ->
                     map.uiSettings.isAttributionEnabled = true
                     map.setStyle(Style.Builder().fromJson(localBasemapStyleJson(context))) { style ->
-                        applyOverlays(style, stopsGeoJson, routesGeoJson)
+                        applyOverlays(style, stopsGeoJson, routesGeoJson, focusedLineState.value)
                         if (clickListenerAttached.compareAndSet(false, true)) {
                             map.addOnMapClickListener { point ->
                                 val screen = map.projection.toScreenLocation(point)
-                                val features =
-                                    map.queryRenderedFeatures(screen, "transit-stops-circle")
                                 val stopId =
-                                    features
+                                    map.queryRenderedFeatures(screen, "transit-stops-circle")
                                         .firstOrNull()
                                         ?.getStringProperty("stop_id")
                                 if (stopId != null) {
                                     onStopSelectedState.value(stopId)
+                                } else {
+                                    val reach =
+                                        RectF(
+                                            screen.x - 28f,
+                                            screen.y - 28f,
+                                            screen.x + 28f,
+                                            screen.y + 28f,
+                                        )
+                                    val line =
+                                        map.queryRenderedFeatures(
+                                            reach,
+                                            "transit-routes-focus",
+                                            "transit-routes-line",
+                                        ).firstOrNull()
+                                            ?.getNumberProperty("line")
+                                            ?.toInt()
+                                    if (line != null) {
+                                        onLineSelectedState.value(line)
+                                    }
                                 }
                                 true
                             }
@@ -98,7 +120,7 @@ fun OfflineMapView(
         update = { view ->
             view.getMapAsync { map ->
                 map.getStyle { style ->
-                    applyOverlays(style, stopsGeoJson, routesGeoJson)
+                    applyOverlays(style, stopsGeoJson, routesGeoJson, focusedLine)
                 }
             }
         },
@@ -109,13 +131,18 @@ private fun applyOverlays(
     style: Style,
     stopsGeoJson: String,
     routesGeoJson: String,
+    focusedLine: Int?,
 ) {
     if (stopsGeoJson.isBlank() || routesGeoJson.isBlank()) {
         return
     }
     val routesSourceId = "transit-routes"
     val stopsSourceId = "transit-stops"
-    listOf("transit-routes-casing", "transit-routes-line", "transit-stops-circle").forEach { layerId ->
+    listOf(
+        "transit-routes-line",
+        "transit-routes-focus",
+        "transit-stops-circle",
+    ).forEach { layerId ->
         if (style.getLayer(layerId) != null) {
             style.removeLayer(layerId)
         }
@@ -127,22 +154,30 @@ private fun applyOverlays(
     }
 
     style.addSource(GeoJsonSource(routesSourceId, routesGeoJson))
-    style.addLayer(
-        LineLayer("transit-routes-casing", routesSourceId).withProperties(
-            PropertyFactory.lineColor("#1c1917"),
-            PropertyFactory.lineWidth(6.5f),
-            PropertyFactory.lineOpacity(0.45f),
-            PropertyFactory.lineCap("round"),
-            PropertyFactory.lineJoin("round"),
-        ),
-    )
+    fun selectedLine(): Expression =
+        Expression.eq(Expression.get("line"), Expression.literal(focusedLine ?: -1))
     style.addLayer(
         LineLayer("transit-routes-line", routesSourceId).withProperties(
             PropertyFactory.lineColor(Expression.get("colour")),
-            PropertyFactory.lineWidth(4f),
+            PropertyFactory.lineOffset(Expression.get("offset")),
+            PropertyFactory.lineWidth(if (focusedLine == null) 3.0f else 1.5f),
+            PropertyFactory.lineOpacity(if (focusedLine == null) 0.9f else 0.25f),
             PropertyFactory.lineCap("round"),
             PropertyFactory.lineJoin("round"),
+            PropertyFactory.lineSortKey(Expression.get("line")),
         ),
+    )
+    style.addLayer(
+        LineLayer("transit-routes-focus", routesSourceId)
+            .withFilter(selectedLine())
+            .withProperties(
+                PropertyFactory.lineColor(Expression.get("colour")),
+                PropertyFactory.lineOffset(Expression.get("offset")),
+                PropertyFactory.lineWidth(4.5f),
+                PropertyFactory.lineOpacity(1.0f),
+                PropertyFactory.lineCap("round"),
+                PropertyFactory.lineJoin("round"),
+            ),
     )
 
     style.addSource(GeoJsonSource(stopsSourceId, stopsGeoJson))
@@ -150,7 +185,7 @@ private fun applyOverlays(
         CircleLayer("transit-stops-circle", stopsSourceId).withProperties(
             PropertyFactory.circleRadius(5f),
             PropertyFactory.circleColor("#dc2626"),
-            PropertyFactory.circleStrokeWidth(1f),
+            PropertyFactory.circleStrokeWidth(4f),
             PropertyFactory.circleStrokeColor("#ffffff"),
         ),
     )

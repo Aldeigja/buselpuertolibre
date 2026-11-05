@@ -35,23 +35,37 @@ object MapOverlayGeoJson {
     }
 
     fun routeLinesFeatureCollection(lines: List<RouteLineEntity>): String {
+        val byLine = linkedMapOf<Int, MutableList<List<DoubleArray>>>()
+        val colours = HashMap<Int, String>()
+        for (line in lines.sortedWith(compareBy({ it.line }, { it.direction }))) {
+            colours.putIfAbsent(line.line, line.colour ?: "#2563eb")
+            byLine.getOrPut(line.line) { mutableListOf() }.addAll(readParts(line))
+        }
+        val routes =
+            byLine.map { (line, parts) ->
+                RoutePath(line, colours.getValue(line), parts)
+            }
         val features = JSONArray()
-        for (line in lines) {
-            val coords = JSONArray(line.coordinatesJson)
-            val geometry =
-                JSONObject()
-                    .put("type", line.geometryType)
-                    .put("coordinates", coords)
+        for (stripe in RouteStripes.build(routes)) {
+            val coordinates = JSONArray()
+            for (point in stripe.points) {
+                coordinates.put(JSONArray(listOf(point[0], point[1])))
+            }
             features.put(
                 JSONObject()
                     .put("type", "Feature")
-                    .put("geometry", geometry)
+                    .put(
+                        "geometry",
+                        JSONObject()
+                            .put("type", "LineString")
+                            .put("coordinates", coordinates),
+                    )
                     .put(
                         "properties",
                         JSONObject()
-                            .put("line", line.line)
-                            .put("direction", line.direction)
-                            .put("colour", line.colour ?: "#2563eb"),
+                            .put("line", stripe.line)
+                            .put("colour", stripe.colour)
+                            .put("offset", stripe.offsetPx),
                     ),
             )
         }
@@ -60,4 +74,18 @@ object MapOverlayGeoJson {
             .put("features", features)
             .toString()
     }
+
+    private fun readParts(line: RouteLineEntity): List<List<DoubleArray>> {
+        val root = JSONArray(line.coordinatesJson)
+        if (line.geometryType == "LineString") {
+            return listOf(readRing(root))
+        }
+        return List(root.length()) { index -> readRing(root.getJSONArray(index)) }
+    }
+
+    private fun readRing(ring: JSONArray): List<DoubleArray> =
+        List(ring.length()) { index ->
+            val point = ring.getJSONArray(index)
+            doubleArrayOf(point.getDouble(0), point.getDouble(1))
+        }
 }
