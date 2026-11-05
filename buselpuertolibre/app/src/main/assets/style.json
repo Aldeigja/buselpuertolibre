@@ -129,8 +129,8 @@
           "restaurant", "restaurant_11",
           "cafe", "cafe_11",
           "fast_food", "fast_food_11",
-          "bar", "bar_11",
-          "pub", "bar_11",
+          "bar", "restaurant_11",
+          "pub", "restaurant_11",
           "school", "school_11",
           "kindergarten", "school_11",
           "college", "college_11",
@@ -146,9 +146,25 @@
           "marina", "park_11",
           "shop_11"
         ],
-        "icon-size": 0.9,
+        "icon-size": 0.85,
+        "icon-anchor": "center",
+        "icon-padding": 2,
         "icon-allow-overlap": false,
+        "text-field": ["get", "name"],
+        "text-font": ["NotoSansRegular"],
+        "text-size": 11,
+        "text-anchor": "top",
+        "text-offset": [0, 0.9],
+        "text-max-width": 8,
+        "text-optional": false,
+        "text-padding": 2,
+        "text-allow-overlap": false,
         "symbol-sort-key": ["get", "rank"]
+      },
+      "paint": {
+        "text-color": "#27272a",
+        "text-halo-color": "#f7f6f4",
+        "text-halo-width": 1.4
       }
     },
     {
@@ -236,6 +252,20 @@
       "source": "basemap",
       "source-layer": "places",
       "minzoom": 16,
+      "filter": [
+        "!",
+        [
+          "in",
+          ["get", "kind"],
+          ["literal", [
+            "pharmacy", "bank", "shop", "supermarket", "convenience",
+            "restaurant", "cafe", "fast_food", "bar", "pub",
+            "school", "kindergarten", "college", "university",
+            "hospital", "clinic", "doctors", "fuel",
+            "park", "playground", "sports_centre", "stadium", "marina"
+          ]]
+        ]
+      ],
       "layout": {
         "text-field": ["get", "name"],
         "text-font": ["NotoSansRegular"],

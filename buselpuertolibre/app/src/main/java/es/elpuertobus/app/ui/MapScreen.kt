@@ -5,20 +5,26 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,14 +33,10 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -49,8 +51,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -206,7 +210,12 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
                         focusedLine = state.focusedLine,
                         onShowAll = viewModel::onShowAllLines,
                         onSelectLine = viewModel::onLineFocused,
-                        sheetClearance = innerPadding.calculateBottomPadding(),
+                        sheetClearance =
+                            if (state.sheet != null && sheetValue != SheetValue.Hidden) {
+                                innerPadding.calculateBottomPadding()
+                            } else {
+                                0.dp
+                            },
                         onNorth = {
                             mapReady.withReady { map, _ ->
                                 val current = map.cameraPosition
@@ -245,31 +254,21 @@ private fun BoxScope.MapChrome(
     onNorth: () -> Unit,
     onMyLocation: () -> Unit,
 ) {
-    Surface(
+    TransitTopFilterBar(
+        swatches = swatches,
+        focusedLine = focusedLine,
+        onShowAll = onShowAll,
+        onSelectLine = onSelectLine,
+        selectedLocale = selectedLocale,
+        onLocale = onLocale,
         modifier =
             Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = Color.White.copy(alpha = 0.96f),
-        shadowElevation = 1.dp,
-        tonalElevation = 0.dp,
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            LanguageSwitch(selected = selectedLocale, onSelect = onLocale)
-            LineFilterBar(
-                swatches = swatches,
-                focusedLine = focusedLine,
-                onShowAll = onShowAll,
-                onSelect = onSelectLine,
-            )
-        }
-    }
-    val aboveSheet = sheetClearance + 16.dp
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+    val navigationInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val aboveSheet = sheetClearance + 16.dp + if (sheetClearance == 0.dp) navigationInset else 0.dp
     MapControlButton(
         onClick = onNorth,
         description = stringResource(R.string.compass_north),
@@ -334,123 +333,127 @@ private fun BoxScope.WithAppLocale(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LanguageSwitch(
-    selected: String,
-    onSelect: (String) -> Unit,
-) {
-    val enLabel = stringResource(R.string.language_en)
-    val esLabel = stringResource(R.string.language_es)
-    val colors =
-        SegmentedButtonDefaults.colors(
-            activeContainerColor = TransitColors.Slate200,
-            activeContentColor = TransitColors.Slate900,
-            inactiveContainerColor = Color.Transparent,
-            inactiveContentColor = TransitColors.Slate600,
-            activeBorderColor = TransitColors.Slate600,
-            inactiveBorderColor = TransitColors.Slate200,
-        )
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.heightIn(min = 48.dp)) {
-            SegmentedButton(
-                selected = selected == "en",
-                onClick = { onSelect("en") },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                colors = colors,
-                modifier = Modifier.semantics { contentDescription = enLabel },
-            ) {
-                Text(enLabel, fontWeight = if (selected == "en") FontWeight.Bold else FontWeight.Medium)
-            }
-            SegmentedButton(
-                selected = selected == "es",
-                onClick = { onSelect("es") },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                colors = colors,
-                modifier = Modifier.semantics { contentDescription = esLabel },
-            ) {
-                Text(esLabel, fontWeight = if (selected == "es") FontWeight.Bold else FontWeight.Medium)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun LineFilterBar(
+private fun TransitTopFilterBar(
     swatches: List<LineSwatch>,
     focusedLine: Int?,
     onShowAll: () -> Unit,
-    onSelect: (Int) -> Unit,
+    onSelectLine: (Int) -> Unit,
+    selectedLocale: String,
+    onLocale: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        item {
-            val allLabel = stringResource(R.string.lines_all)
-            FilterChip(
-                selected = focusedLine == null,
-                onClick = onShowAll,
-                label = {
-                    Text(
-                        allLabel,
-                        fontWeight = if (focusedLine == null) FontWeight.Bold else FontWeight.Medium,
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = Color.White.copy(alpha = 0.96f),
+        tonalElevation = 0.dp,
+        shadowElevation = 1.dp,
+        border = BorderStroke(1.dp, TransitColors.Slate200),
+    ) {
+        Row(
+            modifier = Modifier.height(56.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            LazyRow(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                contentPadding = PaddingValues(start = 8.dp, end = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                item {
+                    AllLinesControl(selected = focusedLine == null, onClick = onShowAll)
+                }
+                items(swatches.size) { index ->
+                    val swatch = swatches[index]
+                    LineFilterControl(
+                        swatch = swatch,
+                        selected = focusedLine == swatch.line,
+                        onClick = { onSelectLine(swatch.line) },
                     )
-                },
-                colors = slateChipColors(),
-                border = slateChipBorder(focusedLine == null),
-                modifier =
-                    Modifier
-                        .heightIn(min = 48.dp)
-                        .semantics { contentDescription = allLabel },
+                }
+            }
+            VerticalDivider(
+                modifier = Modifier.height(24.dp).width(1.dp),
+                color = TransitColors.Slate200,
             )
-        }
-        items(swatches.size) { index ->
-            val swatch = swatches[index]
-            LineFilterChip(
-                swatch = swatch,
-                selected = focusedLine == swatch.line,
-                onClick = { onSelect(swatch.line) },
-            )
+            LanguageControl(selected = selectedLocale, onSelect = onLocale)
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LineFilterChip(
+private fun AllLinesControl(
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val label = stringResource(R.string.lines_all)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+            Modifier
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                .height(48.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(if (selected) TransitColors.Slate900 else TransitColors.Slate100)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 12.dp)
+                .semantics { contentDescription = label },
+    ) {
+        Text(
+            text = label,
+            color = if (selected) Color.White else TransitColors.Slate600,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+        )
+    }
+}
+
+@Composable
+private fun LineFilterControl(
     swatch: LineSwatch,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
     val label = stringResource(R.string.line_label, swatch.line)
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { LineBadge(line = swatch.line, colour = swatch.colour, modifier = Modifier.size(28.dp)) },
-        colors = slateChipColors(),
-        border = slateChipBorder(selected),
+    Box(
+        contentAlignment = Alignment.Center,
         modifier =
             Modifier
-                .heightIn(min = 48.dp)
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(if (selected) TransitColors.Slate200 else Color.Transparent)
+                .clickable(onClick = onClick)
                 .semantics { contentDescription = label },
-    )
+    ) {
+        LineBadge(line = swatch.line, colour = swatch.colour, modifier = Modifier.size(36.dp))
+    }
 }
 
 @Composable
-private fun slateChipColors() =
-    FilterChipDefaults.filterChipColors(
-        containerColor = Color.Transparent,
-        labelColor = TransitColors.Slate900,
-        selectedContainerColor = TransitColors.Slate100,
-        selectedLabelColor = TransitColors.Slate900,
-    )
-
-@Composable
-private fun slateChipBorder(selected: Boolean) =
-    FilterChipDefaults.filterChipBorder(
-        enabled = true,
-        selected = selected,
-        borderColor = TransitColors.Slate200,
-        selectedBorderColor = TransitColors.Slate600,
-        borderWidth = 1.dp,
-        selectedBorderWidth = 1.5.dp,
-    )
+private fun LanguageControl(
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
+    val showingSpanish = selected == "es"
+    val label = stringResource(if (showingSpanish) R.string.language_es else R.string.language_en)
+    val nextTag = if (showingSpanish) "en" else "es"
+    val nextName = stringResource(if (showingSpanish) R.string.language_en else R.string.language_es)
+    val description = stringResource(R.string.switch_to_language, nextName)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+            Modifier
+                .padding(horizontal = 8.dp)
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(TransitColors.Slate900)
+                .clickable { onSelect(nextTag) }
+                .semantics { contentDescription = description },
+    ) {
+        Text(
+            text = label,
+            color = Color.White,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+        )
+    }
+}

@@ -9,6 +9,7 @@
     <string name="location_unavailable">Ubicación no disponible. Actívala en Ajustes para ver dónde estás.</string>
     <string name="language_en">EN</string>
     <string name="language_es">ES</string>
+    <string name="switch_to_language">Cambiar a %1$s</string>
     <string name="tab_overview">Salidas</string>
     <string name="tab_timetable">Horario</string>
     <string name="upstream_notice">Horas de salida desde la parada anterior. Esta parada no tiene hora fija en el folleto.</string>

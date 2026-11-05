@@ -9,6 +9,7 @@
     <string name="location_unavailable">Location is unavailable. Enable it in Settings to see where you are.</string>
     <string name="language_en">EN</string>
     <string name="language_es">ES</string>
+    <string name="switch_to_language">Switch to %1$s</string>
     <string name="tab_overview">Overview</string>
     <string name="tab_timetable">Timetable</string>
     <string name="upstream_notice">Times shown are upstream departures. No printed clock for this stop in the official brochure.</string>
