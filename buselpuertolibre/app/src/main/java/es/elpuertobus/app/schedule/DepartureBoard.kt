@@ -40,6 +40,7 @@ data class UpcomingTrip(
 data class PrintedTimetableLine(
     val line: Int,
     val lineColor: String,
+    val originName: String,
     val destination: String,
     val lineClosedToday: Boolean,
     val times: List<Int>,
@@ -98,6 +99,7 @@ object DepartureBoard {
             if (index < 0) {
                 continue
             }
+            val originName = column.first().stopName
             val destination = column.last().stopName
             val colour = input.lineColours[occurrence.line] ?: FALLBACK_COLOUR
             val closed = StopSchedule.isLineClosed(occurrence.line, profile, input.lineRulesJson)
@@ -106,6 +108,7 @@ object DepartureBoard {
                     PrintedTimetableLine(
                         line = occurrence.line,
                         lineColor = colour,
+                        originName = originName,
                         destination = destination,
                         lineClosedToday = closed,
                         times =
@@ -180,7 +183,7 @@ object DepartureBoard {
             profile = profile,
             hasPrintedTimetable = serving.any { it.stopId in printedIds },
             trips = shown,
-            timetable = timetable.sortedWith(compareBy({ it.line }, { it.destination })),
+            timetable = timetable.sortedWith(compareBy({ it.line }, { it.originName }, { it.destination })),
         )
     }
 

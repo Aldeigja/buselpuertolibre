@@ -12,6 +12,8 @@
     <string name="tab_overview">Salidas</string>
     <string name="tab_timetable">Horario</string>
     <string name="upstream_notice">Horas de salida desde la parada anterior. Esta parada no tiene hora fija en el folleto.</string>
+    <string name="from_origin">Desde %1$s</string>
+    <string name="schedule_not_distinguished">Columnas distintas del horario. La copia no indica en qué se diferencian.</string>
     <string name="from_upstream">desde %1$s (%2$d paradas antes)</string>
     <string name="from_upstream_single">desde %1$s (1 parada antes)</string>
     <string name="towards_downstream">hacia %1$s (primera parada con hora, a %2$d paradas)</string>

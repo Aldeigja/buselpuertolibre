@@ -2,24 +2,23 @@ package es.elpuertobus.app.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -27,8 +26,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,73 +42,104 @@ import es.elpuertobus.app.schedule.StopSchedule
 import es.elpuertobus.app.schedule.UpcomingTrip
 import es.elpuertobus.app.ui.theme.TransitColors
 
+/**
+ * Sheet content for the non-modal scaffold on the map. The header stays put;
+ * only the departure list or timetable scrolls.
+ *
+ * Clock text uses the platform sans (Roboto), which implements the OpenType
+ * `tnum` feature, so columns do not shift as digits change.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StopSheet(
-    sheet: StopSheetUiState,
-    onDismiss: () -> Unit,
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+fun StopSheet(sheet: StopSheetUiState) {
     var tab by rememberSaveable(sheet.stopId) { mutableIntStateOf(0) }
     val overview = if (!sheet.hasPrintedTimetable) 0 else tab
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(
+    val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.92f),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Text(
+                text = sheet.stopName,
+                style = MaterialTheme.typography.titleLarge,
+                color = TransitColors.Slate900,
+            )
+            Text(
+                text = stringResource(R.string.profile_and_season, profileLabel(sheet.profile), stringResource(R.string.season_title)),
+                style = MaterialTheme.typography.labelMedium,
+                color = TransitColors.Slate400,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+            if (!sheet.hasPrintedTimetable) {
+                Surface(
+                    color = TransitColors.Slate100,
+                    shape = MaterialTheme.shapes.medium,
+                    shadowElevation = 1.dp,
+                    tonalElevation = 0.dp,
+                    modifier = Modifier.padding(top = 12.dp, bottom = 8.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.upstream_notice),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TransitColors.Slate600,
+                        modifier = Modifier.padding(12.dp),
+                    )
+                }
+            }
+        }
+        if (sheet.hasPrintedTimetable) {
+            TabRow(
+                selectedTabIndex = overview,
+                containerColor = TransitColors.Slate100.copy(alpha = 0f),
+                divider = { GroupDivider() },
+            ) {
+                Tab(
+                    selected = overview == 0,
+                    onClick = { tab = 0 },
+                    text = { Text(stringResource(R.string.tab_overview), color = TransitColors.Slate600) },
+                )
+                Tab(
+                    selected = overview == 1,
+                    onClick = { tab = 1 },
+                    text = { Text(stringResource(R.string.tab_timetable), color = TransitColors.Slate600) },
+                )
+            }
+        }
+        LazyColumn(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(bottom = 24.dp),
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(top = 8.dp, bottom = navBottom + 16.dp),
         ) {
-            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                val profileName = profileLabel(sheet.profile)
-                val season = stringResource(R.string.season_title)
-                Text(
-                    text = sheet.stopName,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = TransitColors.Slate900,
-                )
-                Text(
-                    text = stringResource(R.string.profile_and_season, profileName, season),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TransitColors.Slate400,
-                )
-            }
-            if (sheet.hasPrintedTimetable) {
-                TabRow(selectedTabIndex = overview, divider = { SheetDivider() }) {
-                    Tab(
-                        selected = overview == 0,
-                        onClick = { tab = 0 },
-                        text = {
-                            Text(
-                                stringResource(R.string.tab_overview),
-                                color = TransitColors.Slate600,
-                            )
-                        },
-                    )
-                    Tab(
-                        selected = overview == 1,
-                        onClick = { tab = 1 },
-                        text = {
-                            Text(
-                                stringResource(R.string.tab_timetable),
-                                color = TransitColors.Slate600,
-                            )
-                        },
-                    )
-                }
-            }
-            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
-                if (overview == 0) {
-                    OverviewPage(sheet)
+            if (overview == 0) {
+                if (sheet.trips.isEmpty()) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.no_more_today),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = TransitColors.Slate600,
+                        )
+                    }
                 } else {
-                    TimetablePage(sheet.timetable)
+                    items(sheet.trips.size) { index ->
+                        TripRow(sheet.trips[index])
+                        ServiceDivider()
+                    }
                 }
-                if (sheet.holidayAttribution.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(16.dp))
+            } else {
+                item { TimetablePage(sheet.timetable) }
+            }
+            if (sheet.holidayAttribution.isNotBlank()) {
+                item {
                     Text(
                         text = sheet.holidayAttribution,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelMedium,
                         color = TransitColors.Slate400,
+                        modifier = Modifier.padding(top = 24.dp),
                     )
                 }
             }
@@ -116,40 +148,17 @@ fun StopSheet(
 }
 
 @Composable
-private fun SheetDivider() {
-    HorizontalDivider(color = TransitColors.Slate200, thickness = 1.dp)
+private fun ServiceDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(start = 40.dp),
+        thickness = 1.dp,
+        color = TransitColors.Slate100,
+    )
 }
 
 @Composable
-private fun OverviewPage(sheet: StopSheetUiState) {
-    if (!sheet.hasPrintedTimetable) {
-        Surface(
-            color = TransitColors.Slate100,
-            shape = MaterialTheme.shapes.medium,
-            shadowElevation = 1.dp,
-            tonalElevation = 0.dp,
-        ) {
-            Text(
-                text = stringResource(R.string.upstream_notice),
-                style = MaterialTheme.typography.bodyMedium,
-                color = TransitColors.Slate600,
-                modifier = Modifier.padding(12.dp),
-            )
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-    }
-    if (sheet.trips.isEmpty()) {
-        Text(
-            text = stringResource(R.string.no_more_today),
-            style = MaterialTheme.typography.bodyLarge,
-            color = TransitColors.Slate600,
-        )
-        return
-    }
-    sheet.trips.forEach { trip ->
-        TripRow(trip)
-        SheetDivider()
-    }
+private fun GroupDivider() {
+    HorizontalDivider(thickness = 1.dp, color = TransitColors.Slate200)
 }
 
 @Composable
@@ -183,23 +192,12 @@ private fun TripRow(trip: UpcomingTrip) {
                     color = TransitColors.Slate400,
                 )
             }
-            if (DepartureBoard.showLeftAgo(trip)) {
-                Text(
-                    text = stringResource(R.string.left_ago, trip.elapsedMinutes),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TransitColors.Slate400,
-                )
-            }
         }
         Column(horizontalAlignment = Alignment.End) {
-            if (!trip.isPast) {
+            val status = departureStatus(trip)
+            if (status != null) {
                 Text(
-                    text =
-                        if (trip.minutesUntil == 0) {
-                            stringResource(R.string.due_now)
-                        } else {
-                            stringResource(R.string.in_minutes, trip.minutesUntil)
-                        },
+                    text = status,
                     style =
                         MaterialTheme.typography.titleMedium.copy(
                             fontFeatureSettings = "tnum",
@@ -214,7 +212,7 @@ private fun TripRow(trip: UpcomingTrip) {
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
                         fontFeatureSettings = "tnum",
-                        fontWeight = if (trip.isPast) FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = if (status == null) FontWeight.Bold else FontWeight.Normal,
                     ),
                 color = if (trip.isPast) timeColor else TransitColors.Slate600,
                 textAlign = TextAlign.End,
@@ -223,46 +221,63 @@ private fun TripRow(trip: UpcomingTrip) {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TimetablePage(lines: List<PrintedTimetableLine>) {
     if (lines.isEmpty()) {
         Text(
             text = stringResource(R.string.no_more_today),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = TransitColors.Slate600,
         )
         return
     }
-    lines.forEach { line ->
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    val columns = timetableColumns(LocalDensity.current.fontScale)
+    lines.forEachIndexed { index, line ->
+        if (index > 0) {
+            GroupDivider()
+        }
+        Row(
+            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             LineBadge(line = line.line, colour = line.lineColor)
             Column(modifier = Modifier.padding(start = 12.dp)) {
                 Text(
-                    text = stringResource(R.string.line_label, line.line),
-                    style = MaterialTheme.typography.titleMedium,
+                    text = line.destination,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
                     color = TransitColors.Slate900,
                 )
-                Text(
-                    text = line.destination,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TransitColors.Slate600,
-                )
+                if (line.originName != line.destination) {
+                    Text(
+                        text = stringResource(R.string.from_origin, line.originName),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = TransitColors.Slate600,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                if (schedulesCollide(line, lines)) {
+                    Text(
+                        text = stringResource(R.string.schedule_not_distinguished),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TransitColors.Slate600,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
                 if (line.approximate) {
                     Text(
                         text = stringResource(R.string.approximate_pass),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TransitColors.Slate400,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TransitColors.Slate600,
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
         when {
             line.lineClosedToday -> {
                 Text(
                     text = stringResource(R.string.line_closed_today, line.line),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = TransitColors.Slate600,
                 )
             }
@@ -273,28 +288,60 @@ private fun TimetablePage(lines: List<PrintedTimetableLine>) {
                     color = TransitColors.Slate600,
                 )
             }
-            else -> {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    maxItemsInEachRow = 4,
-                ) {
-                    line.times.forEach { seconds ->
-                        Text(
-                            text = StopSchedule.formatClock(seconds),
-                            style =
-                                MaterialTheme.typography.bodyLarge.copy(
-                                    fontFeatureSettings = "tnum",
-                                ),
-                            color = TransitColors.Slate900,
-                        )
-                    }
-                }
-            }
+            else -> TimeGrid(times = line.times, columns = columns)
         }
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
+
+@Composable
+private fun TimeGrid(
+    times: List<Int>,
+    columns: Int,
+) {
+    times.chunked(columns).forEach { row ->
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            row.forEach { seconds ->
+                Text(
+                    text = StopSchedule.formatClock(seconds),
+                    modifier = Modifier.weight(1f),
+                    style = clockStyle(MaterialTheme.typography.bodyLarge, FontWeight.Normal),
+                    color = TransitColors.Slate900,
+                    textAlign = TextAlign.Start,
+                )
+            }
+            repeat(columns - row.size) {
+                Text(text = "", modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+private fun timetableColumns(fontScale: Float): Int =
+    when {
+        fontScale >= 1.6f -> 2
+        fontScale >= 1.3f -> 3
+        else -> 4
+    }
+
+private fun schedulesCollide(
+    line: PrintedTimetableLine,
+    lines: List<PrintedTimetableLine>,
+): Boolean =
+    lines.count {
+        it.line == line.line && it.originName == line.originName && it.destination == line.destination
+    } > 1
+
+@Composable
+private fun departureStatus(trip: UpcomingTrip): String? =
+    when {
+        !trip.isPast && trip.minutesUntil == 0 -> stringResource(R.string.due_now)
+        !trip.isPast -> stringResource(R.string.in_minutes, trip.minutesUntil)
+        DepartureBoard.showLeftAgo(trip) -> stringResource(R.string.left_ago, trip.elapsedMinutes)
+        else -> null
+    }
 
 @Composable
 private fun anchorLabel(trip: UpcomingTrip): String =
@@ -312,3 +359,13 @@ private fun profileLabel(profile: ServiceProfile): String =
         ServiceProfile.SABADOS -> stringResource(R.string.profile_sabados)
         ServiceProfile.FESTIVOS -> stringResource(R.string.profile_festivos)
     }
+
+private fun clockStyle(
+    base: TextStyle,
+    weight: FontWeight,
+): TextStyle =
+    base.copy(
+        fontWeight = weight,
+        fontFamily = FontFamily.SansSerif,
+        fontFeatureSettings = "tnum",
+    )

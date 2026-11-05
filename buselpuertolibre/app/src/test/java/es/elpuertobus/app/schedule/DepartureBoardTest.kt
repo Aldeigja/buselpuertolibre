@@ -112,6 +112,7 @@ class DepartureBoardTest {
         assertTrue(result.trips.all { it.stopsFromAnchor == 0 && !it.downstream })
         assertEquals("Terminal Marítima", result.trips.first().upstreamStopName)
         assertEquals(listOf(clock(7, 20), clock(8, 0)), result.timetable.single().times)
+        assertEquals("Before", result.timetable.single().originName)
         assertEquals(listOf(clock(8, 0)), result.trips.map { it.scheduledSeconds })
         assertFalse(result.trips.single().isPast)
     }
@@ -353,16 +354,47 @@ class DepartureBoardTest {
             input(selected = selected, stops = stops, departures = departures, now = now),
         ).timetable.single()
 
+    @Test
+    fun timetableKeepsColumnsWithTheSameDestinationAndRecordsEachOrigin() {
+        val stops =
+            listOf(
+                stop("L5_left_001_9", 5, 1, "Plaza", columnSide = "left"),
+                stop("L5_left_002_9", 5, 2, "Cementerio", columnSide = "left"),
+                stop("L5_left_003_9", 5, 3, "Poblado", columnSide = "left"),
+                stop("L5_right_001_9", 5, 1, "Hijuelas", columnSide = "right"),
+                stop("L5_right_002_9", 5, 2, "Cementerio", columnSide = "right"),
+                stop("L5_right_003_9", 5, 3, "Poblado", columnSide = "right"),
+            )
+        val departures =
+            listOf(
+                DepartureSnapshot(5, "laborables", clock(10, 0), "L5_left_002_9"),
+                DepartureSnapshot(5, "laborables", clock(11, 0), "L5_right_002_9"),
+            )
+        val result =
+            DepartureBoard.build(
+                input(
+                    selected = "L5_left_002_9",
+                    stops = stops,
+                    departures = departures,
+                    now = ZonedDateTime.of(2026, 11, 4, 9, 0, 0, 0, zone),
+                ),
+            )
+        assertEquals(listOf("Hijuelas", "Plaza"), result.timetable.map { it.originName })
+        assertEquals(listOf("Poblado", "Poblado"), result.timetable.map { it.destination })
+        assertEquals(listOf(listOf(clock(11, 0)), listOf(clock(10, 0))), result.timetable.map { it.times })
+    }
+
     private fun stop(
         id: String,
         line: Int,
         sequence: Int,
         name: String,
+        columnSide: String = "left",
     ): ItineraryStopRef =
         ItineraryStopRef(
             stopId = id,
             line = line,
-            columnSide = "left",
+            columnSide = columnSide,
             sequence = sequence,
             stopName = name,
         )
