@@ -45,6 +45,8 @@ data class PrintedTimetableLine(
     val lineClosedToday: Boolean,
     val times: List<Int>,
     val approximate: Boolean,
+    val clockStopName: String = "",
+    val stopsAhead: Int = 0,
 )
 
 data class DepartureBoardResult(
@@ -103,7 +105,38 @@ object DepartureBoard {
             val destination = column.last().stopName
             val colour = input.lineColours[occurrence.line] ?: FALLBACK_COLOUR
             val closed = StopSchedule.isLineClosed(occurrence.line, profile, input.lineRulesJson)
-            if (occurrence.stopId in printedIds) {
+            val ancoraSplit = line3AncoraSplit(column, index, input.departures, profile)
+            if (ancoraSplit != null) {
+                if (ancoraSplit.turnTimes.isNotEmpty()) {
+                    timetable.add(
+                        PrintedTimetableLine(
+                            line = occurrence.line,
+                            lineColor = colour,
+                            originName = ancoraSplit.ancora.stopName,
+                            destination = ancoraSplit.terminalName,
+                            lineClosedToday = closed,
+                            times = if (closed) emptyList() else ancoraSplit.turnTimes,
+                            approximate = true,
+                        ),
+                    )
+                }
+                val fuente = ancoraSplit.fuente
+                if (fuente != null && ancoraSplit.throughTimes.isNotEmpty()) {
+                    timetable.add(
+                        PrintedTimetableLine(
+                            line = occurrence.line,
+                            lineColor = colour,
+                            originName = originName,
+                            destination = destination,
+                            lineClosedToday = closed,
+                            times = if (closed) emptyList() else ancoraSplit.throughTimes,
+                            approximate = true,
+                            clockStopName = fuente.stopName,
+                            stopsAhead = ancoraSplit.stopsAhead,
+                        ),
+                    )
+                }
+            } else if (occurrence.stopId in printedIds) {
                 timetable.add(
                     PrintedTimetableLine(
                         line = occurrence.line,
@@ -122,6 +155,16 @@ object DepartureBoard {
                 )
             }
             if (closed) {
+                continue
+            }
+            if (ancoraSplit != null) {
+                addAncoraSplitTrips(
+                    trips = trips,
+                    occurrence = occurrence,
+                    colour = colour,
+                    split = ancoraSplit,
+                    nowSeconds = nowSeconds,
+                )
                 continue
             }
             val anchor = resolveAnchor(column, index, printedIds) ?: continue
@@ -225,6 +268,136 @@ object DepartureBoard {
             downstream = downstream,
             approximate = approximate,
         )
+
+    private data class AncoraSplit(
+        val ancora: ItineraryStopRef,
+        val fuente: ItineraryStopRef?,
+        val stopsAhead: Int,
+        val terminalName: String,
+        val throughDestination: String,
+        val turnTimes: List<Int>,
+        val continuedTimes: List<Int>,
+        val throughTimes: List<Int>,
+    )
+
+    /**
+     * Weekday buses reach Áncora and turn back until the last turning pass. Later
+     * trips still pass Áncora and are printed at Fuentebravía, one stop ahead.
+     * Festivo trips all turn. The Fuentebravía minute is not copied onto Áncora.
+     */
+    private fun line3AncoraSplit(
+        column: List<ItineraryStopRef>,
+        index: Int,
+        departures: List<DepartureSnapshot>,
+        profile: ServiceProfile,
+    ): AncoraSplit? {
+        if (column.getOrNull(index)?.line != 3) {
+            return null
+        }
+        val ancora =
+            column.indexOfFirst { stop ->
+                departures.any { it.boundStopId == stop.stopId && it.columnLabel == "ANCORA" }
+            }
+        if (ancora != index) {
+            return null
+        }
+        val fuente =
+            column.indexOfFirst { stop ->
+                departures.any { it.boundStopId == stop.stopId && it.columnLabel == "FUENTEBRAVIA" }
+            }
+        val searchFrom = if (fuente >= 0) fuente + 1 else ancora + 1
+        val returnAncla =
+            (searchFrom until column.size).firstOrNull {
+                column[it].stopName.contains("Ancla")
+            } ?: return null
+        val terminal =
+            (returnAncla until column.size).firstOrNull {
+                column[it].stopName.startsWith("Terminal")
+            } ?: return null
+        val ancoraStop = column[ancora]
+        val continued = continuedAncoraSeconds(departures, ancoraStop.stopId, profile)
+        val ancoraTimes = timesFor(departures, ancoraStop.stopId, profile)
+        val turnTimes = ancoraTimes.filter { it !in continued }
+        val fuenteStop = if (fuente >= 0) column[fuente] else null
+        val throughTimes =
+            if (fuenteStop == null) {
+                emptyList()
+            } else {
+                timesFor(departures, fuenteStop.stopId, profile)
+            }
+        if (turnTimes.isEmpty() && throughTimes.isEmpty()) {
+            return null
+        }
+        return AncoraSplit(
+            ancora = ancoraStop,
+            fuente = fuenteStop,
+            stopsAhead = if (fuenteStop == null) 0 else fuente - ancora,
+            terminalName = column[terminal].stopName,
+            throughDestination = column.last().stopName,
+            turnTimes = turnTimes,
+            continuedTimes = ancoraTimes.filter { it in continued },
+            throughTimes = throughTimes,
+        )
+    }
+
+    private fun addAncoraSplitTrips(
+        trips: MutableList<UpcomingTrip>,
+        occurrence: ItineraryStopRef,
+        colour: String,
+        split: AncoraSplit,
+        nowSeconds: Int,
+    ) {
+        fun addOwn(seconds: Int, destination: String) {
+            val earliest = nowSeconds - OWN_CLOCK_LOOKBACK_MINUTES * 60
+            if (seconds < earliest) {
+                return
+            }
+            val elapsed = (nowSeconds - seconds) / 60
+            trips.add(
+                tripAt(
+                    occurrence = occurrence,
+                    colour = colour,
+                    destination = destination,
+                    anchorStop = split.ancora,
+                    stopsAway = 0,
+                    seconds = seconds,
+                    nowSeconds = nowSeconds,
+                    elapsed = elapsed,
+                    downstream = false,
+                    approximate = true,
+                ),
+            )
+        }
+        for (seconds in split.turnTimes) {
+            addOwn(seconds, split.terminalName)
+        }
+        for (seconds in split.continuedTimes) {
+            addOwn(seconds, split.throughDestination)
+        }
+        val fuente = split.fuente ?: return
+        val paired = split.continuedTimes.map { it + ANCORA_CONTINUES_AFTER_MINUTES * 60 }.toSet()
+        val earliest = nowSeconds - LOOKBACK_MINUTES * 60
+        for (seconds in split.throughTimes) {
+            if (seconds in paired || seconds < earliest) {
+                continue
+            }
+            val elapsed = (nowSeconds - seconds) / 60
+            trips.add(
+                tripAt(
+                    occurrence = occurrence,
+                    colour = colour,
+                    destination = split.throughDestination,
+                    anchorStop = fuente,
+                    stopsAway = split.stopsAhead,
+                    seconds = seconds,
+                    nowSeconds = nowSeconds,
+                    elapsed = elapsed,
+                    downstream = true,
+                    approximate = true,
+                ),
+            )
+        }
+    }
 
     /**
      * Before Fuentebravía, Line 3 reaches Áncora and comes back through the citybound

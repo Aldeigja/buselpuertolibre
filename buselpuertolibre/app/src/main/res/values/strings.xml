@@ -18,6 +18,7 @@
     <string name="from_upstream">from %1$s (%2$d stops earlier)</string>
     <string name="from_upstream_single">from %1$s (1 stop earlier)</string>
     <string name="towards_downstream">towards %1$s (first printed stop, %2$d stops ahead)</string>
+    <string name="printed_at_next_stop">Time printed at %1$s, one stop ahead</string>
     <string name="at_timepoint">at %1$s</string>
     <string name="approximate_pass">Approximate pass</string>
     <string name="left_ago">Left ~%1$d m ago</string>

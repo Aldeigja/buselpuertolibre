@@ -327,6 +327,84 @@ class DepartureBoardTest {
         assertEquals(listOf("Fuentebravía"), atNaval.trips.map { it.upstreamStopName }.distinct())
     }
 
+    @Test
+    fun line3AncoraKeepsTheLaterThroughTrips() {
+        val stops =
+            listOf(
+                stop("L3_outbound_001_10", 3, 1, "Áncora - El Ancla"),
+                stop("L3_outbound_002_20", 3, 2, "Fuentebravía"),
+                stop("L3_outbound_003_30", 3, 3, "Poblado Naval"),
+                stop("L3_outbound_004_40", 3, 4, "Ctra. Rota - Burger King/El Ancla"),
+                stop("L3_outbound_005_50", 3, 5, "Terminal Marítima"),
+                stop("L3_outbound_006_60", 3, 6, "Micaela Aramburu - Las Galeras"),
+            )
+        val departures =
+            listOf(
+                DepartureSnapshot(3, "laborables", clock(14, 40), "L3_outbound_001_10", "ANCORA"),
+                DepartureSnapshot(3, "laborables", clock(15, 0), "L3_outbound_001_10", "ANCORA"),
+                DepartureSnapshot(3, "laborables", clock(15, 20), "L3_outbound_001_10", "ANCORA"),
+                DepartureSnapshot(3, "laborables", clock(15, 10), "L3_outbound_002_20", "FUENTEBRAVIA"),
+                DepartureSnapshot(3, "laborables", clock(15, 45), "L3_outbound_002_20", "FUENTEBRAVIA"),
+                DepartureSnapshot(3, "laborables", clock(19, 10), "L3_outbound_002_20", "FUENTEBRAVIA"),
+                DepartureSnapshot(3, "laborables", clock(19, 40), "L3_outbound_002_20", "FUENTEBRAVIA"),
+                DepartureSnapshot(3, "festivos", clock(19, 10), "L3_outbound_001_10", "ANCORA"),
+                DepartureSnapshot(3, "festivos", clock(22, 10), "L3_outbound_001_10", "ANCORA"),
+            )
+        val evening =
+            DepartureBoard.build(
+                input(
+                    selected = "L3_outbound_001_10",
+                    stops = stops,
+                    departures = departures,
+                    now = ZonedDateTime.of(2026, 11, 5, 19, 5, 0, 0, zone),
+                ),
+            )
+        assertEquals(
+            listOf(clock(19, 10), clock(19, 40)),
+            evening.trips.map { it.scheduledSeconds },
+        )
+        val next = evening.trips.first()
+        assertEquals("Fuentebravía", next.upstreamStopName)
+        assertEquals("Micaela Aramburu - Las Galeras", next.destination)
+        assertTrue(next.downstream)
+        assertEquals(1, next.stopsFromAnchor)
+        val turning = evening.timetable.single { it.destination == "Terminal Marítima" }
+        assertEquals(listOf(clock(14, 40), clock(15, 20)), turning.times)
+        val through = evening.timetable.single { it.destination == "Micaela Aramburu - Las Galeras" }
+        assertEquals(listOf(clock(15, 10), clock(15, 45), clock(19, 10), clock(19, 40)), through.times)
+        assertEquals("Fuentebravía", through.clockStopName)
+        assertEquals(1, through.stopsAhead)
+
+        val beforeTheSplit =
+            DepartureBoard.build(
+                input(
+                    selected = "L3_outbound_001_10",
+                    stops = stops,
+                    departures = departures,
+                    now = ZonedDateTime.of(2026, 11, 5, 14, 50, 0, 0, zone),
+                ),
+            )
+        val atAncora = beforeTheSplit.trips.filter { !it.downstream }
+        assertEquals(listOf(clock(15, 0), clock(15, 20)), atAncora.map { it.scheduledSeconds })
+        assertEquals("Micaela Aramburu - Las Galeras", atAncora.first().destination)
+        assertEquals("Terminal Marítima", atAncora.last().destination)
+        assertEquals(clock(15, 45), beforeTheSplit.trips.first { it.downstream }.scheduledSeconds)
+        assertTrue(clock(15, 10) !in beforeTheSplit.trips.map { it.scheduledSeconds })
+
+        val festivo =
+            DepartureBoard.build(
+                input(
+                    selected = "L3_outbound_001_10",
+                    stops = stops,
+                    departures = departures,
+                    now = ZonedDateTime.of(2026, 11, 8, 18, 0, 0, 0, zone),
+                ),
+            )
+        assertEquals(listOf("Terminal Marítima"), festivo.timetable.map { it.destination })
+        assertEquals(listOf(clock(19, 10), clock(22, 10)), festivo.timetable.single().times)
+        assertEquals("Terminal Marítima", festivo.trips.first().destination)
+    }
+
     private fun input(
         selected: String,
         stops: List<ItineraryStopRef>,

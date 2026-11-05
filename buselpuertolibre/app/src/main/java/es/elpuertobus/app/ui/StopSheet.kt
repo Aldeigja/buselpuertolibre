@@ -263,6 +263,21 @@ private fun TimetablePage(lines: List<PrintedTimetableLine>) {
                         modifier = Modifier.padding(top = 8.dp),
                     )
                 }
+                if (line.stopsAhead == 1) {
+                    Text(
+                        text = stringResource(R.string.printed_at_next_stop, line.clockStopName),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TransitColors.Slate600,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                } else if (line.stopsAhead > 1) {
+                    Text(
+                        text = stringResource(R.string.towards_downstream, line.clockStopName, line.stopsAhead),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TransitColors.Slate600,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
                 if (line.approximate) {
                     Text(
                         text = stringResource(R.string.approximate_pass),
