@@ -63,6 +63,12 @@ object DepartureBoard {
     /** Line 3 winter columns headed "PASO APROX." in the brochure. */
     private val APPROXIMATE_COLUMNS = setOf("VALDELAGRANA", "ANCORA", "FUENTEBRAVIA")
 
+    /**
+     * The only weekday row that prints both an Áncora time and a Fuentebravía time
+     * is Áncora 15:00 with Fuentebravía 15:10. Every other Áncora time turns back.
+     */
+    private const val ANCORA_CONTINUES_AFTER_MINUTES = 10
+
     fun build(input: DepartureBoardInput): DepartureBoardResult {
         val selected = input.stops.find { it.stopId == input.selectedStopId }
         val localNow = input.now.withZoneSameInstant(input.zoneId)
@@ -124,20 +130,43 @@ object DepartureBoard {
                 }
                 val elapsed = (nowSeconds - seconds) / 60
                 trips.add(
-                    UpcomingTrip(
-                        line = occurrence.line,
-                        lineColor = colour,
+                    tripAt(
+                        occurrence = occurrence,
+                        colour = colour,
                         destination = destination,
-                        upstreamStopId = anchorStop.stopId,
-                        upstreamStopName = anchorStop.stopName,
-                        stopsFromAnchor = anchor.stopsAway,
-                        scheduledSeconds = seconds,
-                        isPast = seconds < nowSeconds,
-                        elapsedMinutes = if (seconds < nowSeconds) elapsed else 0,
+                        anchorStop = anchorStop,
+                        stopsAway = anchor.stopsAway,
+                        seconds = seconds,
+                        nowSeconds = nowSeconds,
+                        elapsed = elapsed,
                         downstream = anchor.downstream,
                         approximate = approximate,
                     ),
                 )
+            }
+            val turnBack = line3AncoraTurnBack(column, index, input.departures, profile)
+            if (turnBack != null) {
+                val earliestTurn = nowSeconds - LOOKBACK_MINUTES * 60
+                for (seconds in turnBack.times) {
+                    if (seconds < earliestTurn) {
+                        continue
+                    }
+                    val elapsed = (nowSeconds - seconds) / 60
+                    trips.add(
+                        tripAt(
+                            occurrence = occurrence,
+                            colour = colour,
+                            destination = turnBack.destination,
+                            anchorStop = turnBack.anchorStop,
+                            stopsAway = turnBack.stopsAway,
+                            seconds = seconds,
+                            nowSeconds = nowSeconds,
+                            elapsed = elapsed,
+                            downstream = false,
+                            approximate = true,
+                        ),
+                    )
+                }
             }
         }
         val shown =
@@ -158,6 +187,108 @@ object DepartureBoard {
         trip.isPast && trip.elapsedMinutes <= LEFT_AGO_MAX_MINUTES
 
     private data class Anchor(val index: Int, val stopsAway: Int, val downstream: Boolean)
+
+    private data class AncoraTurnBack(
+        val anchorStop: ItineraryStopRef,
+        val stopsAway: Int,
+        val times: List<Int>,
+        val destination: String,
+    )
+
+    private fun tripAt(
+        occurrence: ItineraryStopRef,
+        colour: String,
+        destination: String,
+        anchorStop: ItineraryStopRef,
+        stopsAway: Int,
+        seconds: Int,
+        nowSeconds: Int,
+        elapsed: Int,
+        downstream: Boolean,
+        approximate: Boolean,
+    ): UpcomingTrip =
+        UpcomingTrip(
+            line = occurrence.line,
+            lineColor = colour,
+            destination = destination,
+            upstreamStopId = anchorStop.stopId,
+            upstreamStopName = anchorStop.stopName,
+            stopsFromAnchor = stopsAway,
+            scheduledSeconds = seconds,
+            isPast = seconds < nowSeconds,
+            elapsedMinutes = if (seconds < nowSeconds) elapsed else 0,
+            downstream = downstream,
+            approximate = approximate,
+        )
+
+    /**
+     * Before Fuentebravía, Line 3 reaches Áncora and comes back through the citybound
+     * stops. Those stops keep the Fuentebravía times for the later through trips.
+     */
+    private fun line3AncoraTurnBack(
+        column: List<ItineraryStopRef>,
+        index: Int,
+        departures: List<DepartureSnapshot>,
+        profile: ServiceProfile,
+    ): AncoraTurnBack? {
+        if (column.getOrNull(index)?.line != 3) {
+            return null
+        }
+        val ancora =
+            column.indexOfFirst { stop ->
+                departures.any { it.boundStopId == stop.stopId && it.columnLabel == "ANCORA" }
+            }
+        if (ancora < 0) {
+            return null
+        }
+        val fuente =
+            column.indexOfFirst { stop ->
+                departures.any { it.boundStopId == stop.stopId && it.columnLabel == "FUENTEBRAVIA" }
+            }
+        val searchFrom = if (fuente >= 0) fuente + 1 else ancora + 1
+        val returnAncla =
+            (searchFrom until column.size).firstOrNull {
+                column[it].stopName.contains("Ancla")
+            } ?: return null
+        val terminal =
+            (returnAncla until column.size).firstOrNull {
+                column[it].stopName.startsWith("Terminal")
+            } ?: return null
+        if (index !in returnAncla until terminal) {
+            return null
+        }
+        val anchorStop = column[ancora]
+        val continued = continuedAncoraSeconds(departures, anchorStop.stopId, profile)
+        val times = timesFor(departures, anchorStop.stopId, profile).filter { it !in continued }
+        if (times.isEmpty()) {
+            return null
+        }
+        return AncoraTurnBack(
+            anchorStop = anchorStop,
+            stopsAway = index - returnAncla + 1,
+            times = times,
+            destination = column[terminal].stopName,
+        )
+    }
+
+    private fun continuedAncoraSeconds(
+        departures: List<DepartureSnapshot>,
+        ancoraStopId: String,
+        profile: ServiceProfile,
+    ): Set<Int> {
+        val fuente =
+            departures
+                .filter {
+                    it.line == 3 &&
+                        it.serviceDay == profile.dbValue &&
+                        it.columnLabel == "FUENTEBRAVIA"
+                }
+                .map { it.secondsSinceMidnight }
+                .toSet()
+        return timesFor(departures, ancoraStopId, profile)
+            .filter { it + ANCORA_CONTINUES_AFTER_MINUTES * 60 in fuente }
+            .toSet()
+    }
 
     private fun lookbackMinutes(anchor: Anchor): Int =
         if (anchor.stopsAway == 0 && !anchor.downstream) {

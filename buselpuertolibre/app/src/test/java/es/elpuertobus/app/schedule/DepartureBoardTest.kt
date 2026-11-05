@@ -289,6 +289,43 @@ class DepartureBoardTest {
         assertFalse(line6.timetable.single().approximate)
     }
 
+    @Test
+    fun line3TurnBackAtAncoraShowsOnTheCityboundStops() {
+        val stops =
+            listOf(
+                stop("L3_outbound_001_10", 3, 1, "Áncora - El Ancla"),
+                stop("L3_outbound_002_20", 3, 2, "Fuentebravía"),
+                stop("L3_outbound_003_30", 3, 3, "Poblado Naval"),
+                stop("L3_outbound_004_40", 3, 4, "Ctra. Rota - Burger King/El Ancla"),
+                stop("L3_outbound_005_50", 3, 5, "Valdés - Plaza de Toros"),
+                stop("L3_outbound_006_60", 3, 6, "Terminal Marítima"),
+            )
+        val departures =
+            listOf(
+                DepartureSnapshot(3, "laborables", clock(14, 40), "L3_outbound_001_10", "ANCORA"),
+                DepartureSnapshot(3, "laborables", clock(15, 0), "L3_outbound_001_10", "ANCORA"),
+                DepartureSnapshot(3, "laborables", clock(15, 20), "L3_outbound_001_10", "ANCORA"),
+                DepartureSnapshot(3, "laborables", clock(15, 10), "L3_outbound_002_20", "FUENTEBRAVIA"),
+            )
+        val now = ZonedDateTime.of(2026, 11, 5, 14, 50, 0, 0, zone)
+        val atToros =
+            DepartureBoard.build(
+                input(selected = "L3_outbound_005_50", stops = stops, departures = departures, now = now),
+            )
+        val fromAncora = atToros.trips.filter { it.upstreamStopName == "Áncora - El Ancla" }
+        assertEquals(listOf(clock(14, 40), clock(15, 20)), fromAncora.map { it.scheduledSeconds })
+        assertEquals("Terminal Marítima", fromAncora.first().destination)
+        assertEquals(2, fromAncora.first().stopsFromAnchor)
+        assertTrue(fromAncora.first().approximate)
+        assertEquals(listOf(clock(15, 10)), atToros.trips.filter { it.upstreamStopName == "Fuentebravía" }.map { it.scheduledSeconds })
+
+        val atNaval =
+            DepartureBoard.build(
+                input(selected = "L3_outbound_003_30", stops = stops, departures = departures, now = now),
+            )
+        assertEquals(listOf("Fuentebravía"), atNaval.trips.map { it.upstreamStopName }.distinct())
+    }
+
     private fun input(
         selected: String,
         stops: List<ItineraryStopRef>,
