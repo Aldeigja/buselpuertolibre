@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 import extract_osm_bus as osm_bus
+from elpuerto.osm_routes import without_teleported_repeats
 
 parse_bus_routes = osm_bus.parse_bus_routes
 parse_line_ref = osm_bus.parse_line_ref
@@ -13,6 +14,22 @@ routes_to_transit_document = osm_bus.routes_to_transit_document
 stitch_way_geometries = osm_bus.stitch_way_geometries
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "overpass_routes_minimal.json"
+
+
+class TeleportedRepeatTest(unittest.TestCase):
+    def test_drops_the_glorieta_jump_and_keeps_a_real_return(self) -> None:
+        glorieta = {"name": "Glorieta de Fuentebravía", "role": "platform", "name_source": "own", "lat": 36.61200, "lon": -6.28725}
+        terminal = {"name": "Terminal Marítima", "role": "platform", "name_source": "own", "lat": 36.59378, "lon": -6.22704}
+        micaela = {"name": "Micaela Aramburu - Las Galeras", "role": "platform", "name_source": "own", "lat": 36.59410, "lon": -6.22740}
+        jumped = {"name": "Glorieta de Fuentebravía", "role": "stop", "name_source": "nearby_platform", "lat": 36.61201, "lon": -6.28717}
+        returned = {"name": "Poblado de Doña Blanca", "role": "platform", "name_source": "own", "lat": 36.62, "lon": -6.25}
+        kept = without_teleported_repeats([glorieta, terminal, micaela, jumped, returned])
+        self.assertEqual([stop["name"] for stop in kept], [
+            "Glorieta de Fuentebravía",
+            "Terminal Marítima",
+            "Micaela Aramburu - Las Galeras",
+            "Poblado de Doña Blanca",
+        ])
 
 
 class ParseLineRefTest(unittest.TestCase):

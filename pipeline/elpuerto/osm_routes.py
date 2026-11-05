@@ -3,9 +3,16 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 from elpuerto.models import ColumnSide, ItineraryStop
+
+# A stop_position named from a nearby platform, then repeated after a multi-kilometre
+# jump, is the same shelter already listed. Line 3's relation does this at the
+# Fuentebravía roundabout, after Terminal Marítima.
+_TELEPORT_HOP_M = 2_000.0
+_SAME_SHELTER_M = 100.0
 
 ROUTES_FILENAME = "elpuerto_bus_routes_OSM.json"
 MAP_FILENAME = "elpuerto_bus_map_osm.geojson"
@@ -51,7 +58,7 @@ def load_route_stops(path: Path) -> list[ItineraryStop]:
         direction = str(route.get("direction") or "outbound")
         column = ColumnSide.RIGHT if direction == "inbound" else ColumnSide.LEFT
         relation = int(route["osm_relation_id"])
-        for stop in route.get("stops", []):
+        for stop in without_teleported_repeats(route.get("stops", [])):
             sequence = int(stop["stop_sequence"])
             node_id = int(stop["osm_node_id"])
             stops.append(
@@ -76,6 +83,39 @@ def load_route_stops(path: Path) -> list[ItineraryStop]:
     if missing:
         raise RuntimeError(f"OSM routes missing lines: {sorted(missing)}")
     return stops
+
+
+def without_teleported_repeats(stops: list[dict]) -> list[dict]:
+    """Drop a repeated shelter that the route member order jumps back to."""
+    kept: list[dict] = []
+    for stop in stops:
+        if _is_teleported_repeat(stop, kept):
+            continue
+        kept.append(stop)
+    return kept
+
+
+def _is_teleported_repeat(stop: dict, earlier: list[dict]) -> bool:
+    if stop.get("role") != "stop" or stop.get("name_source") != "nearby_platform":
+        return False
+    if not earlier:
+        return False
+    previous = earlier[-1]
+    if _metres(previous, stop) < _TELEPORT_HOP_M:
+        return False
+    return any(
+        other.get("name") == stop.get("name") and _metres(other, stop) <= _SAME_SHELTER_M
+        for other in earlier
+    )
+
+
+def _metres(a: dict, b: dict) -> float:
+    lat1 = math.radians(float(a["lat"]))
+    lat2 = math.radians(float(b["lat"]))
+    dlat = lat2 - lat1
+    dlon = math.radians(float(b["lon"]) - float(a["lon"]))
+    x = dlon * math.cos((lat1 + lat2) / 2)
+    return math.hypot(x, dlat) * 6_371_000.0
 
 
 def review_from_checked_map(
