@@ -4,6 +4,7 @@
     <string name="osm_attribution">© OpenStreetMap contributors</string>
     <string name="season_title">Invierno 2026/2027</string>
     <string name="line_label">Línea %1$d</string>
+    <string name="lines_all">Todas</string>
     <string name="next_departures">Próximas salidas</string>
     <string name="full_timetable">Horario completo</string>
     <string name="no_printed_clock">Esta parada no tiene hora impresa en el horario.</string>

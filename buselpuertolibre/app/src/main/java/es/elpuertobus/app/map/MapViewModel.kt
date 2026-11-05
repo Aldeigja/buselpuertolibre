@@ -95,6 +95,10 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                     val stop =
                         db.transitDao().stopById(stopId)
                             ?: error("Unknown stop $stopId")
+                    val focused = _uiState.value.focusedLine
+                    if (focused != null && stop.line != focused) {
+                        return@runCatching null
+                    }
                     val departures = departuresCache ?: emptyList()
                     val holidays = holidayDatesCache ?: emptySet()
                     val rules = lineRulesCache ?: emptyMap()
@@ -126,7 +130,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                     db.close()
                 }
             }.onSuccess { sheet ->
-                _uiState.update { it.copy(sheet = sheet) }
+                if (sheet != null) {
+                    _uiState.update { it.copy(sheet = sheet) }
+                }
             }.onFailure { error ->
                 _uiState.update {
                     it.copy(errorMessage = error.message ?: error.toString())
@@ -139,9 +145,15 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { it.copy(sheet = null) }
     }
 
+    fun onShowAllLines() {
+        _uiState.update { it.copy(focusedLine = null) }
+    }
+
     fun onLineFocused(line: Int) {
         _uiState.update { state ->
-            state.copy(focusedLine = if (state.focusedLine == line) null else line)
+            val next = if (state.focusedLine == line) null else line
+            val sheet = state.sheet?.takeIf { next == null || it.line == next }
+            state.copy(focusedLine = next, sheet = sheet)
         }
     }
 }

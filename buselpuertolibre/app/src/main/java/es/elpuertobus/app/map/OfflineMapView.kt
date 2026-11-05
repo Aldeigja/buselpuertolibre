@@ -94,11 +94,8 @@ fun OfflineMapView(
                                             screen.y + 28f,
                                         )
                                     val line =
-                                        map.queryRenderedFeatures(
-                                            reach,
-                                            "transit-routes-focus",
-                                            "transit-routes-line",
-                                        ).firstOrNull()
+                                        map.queryRenderedFeatures(reach, "transit-routes-line")
+                                            .firstOrNull()
                                             ?.getNumberProperty("line")
                                             ?.toInt()
                                     if (line != null) {
@@ -154,39 +151,31 @@ private fun applyOverlays(
     }
 
     style.addSource(GeoJsonSource(routesSourceId, routesGeoJson))
-    fun selectedLine(): Expression =
-        Expression.eq(Expression.get("line"), Expression.literal(focusedLine ?: -1))
-    style.addLayer(
+    fun selectedLine(): Expression? =
+        focusedLine?.let { line ->
+            Expression.eq(Expression.get("line"), Expression.literal(line))
+        }
+    val routesLayer =
         LineLayer("transit-routes-line", routesSourceId).withProperties(
             PropertyFactory.lineColor(Expression.get("colour")),
             PropertyFactory.lineOffset(Expression.get("offset")),
-            PropertyFactory.lineWidth(if (focusedLine == null) 3.0f else 1.5f),
-            PropertyFactory.lineOpacity(if (focusedLine == null) 0.9f else 0.25f),
+            PropertyFactory.lineWidth(3.0f),
+            PropertyFactory.lineOpacity(0.9f),
             PropertyFactory.lineCap("round"),
             PropertyFactory.lineJoin("round"),
             PropertyFactory.lineSortKey(Expression.get("line")),
-        ),
-    )
-    style.addLayer(
-        LineLayer("transit-routes-focus", routesSourceId)
-            .withFilter(selectedLine())
-            .withProperties(
-                PropertyFactory.lineColor(Expression.get("colour")),
-                PropertyFactory.lineOffset(Expression.get("offset")),
-                PropertyFactory.lineWidth(4.5f),
-                PropertyFactory.lineOpacity(1.0f),
-                PropertyFactory.lineCap("round"),
-                PropertyFactory.lineJoin("round"),
-            ),
-    )
+        )
+    selectedLine()?.let { routesLayer.withFilter(it) }
+    style.addLayer(routesLayer)
 
     style.addSource(GeoJsonSource(stopsSourceId, stopsGeoJson))
-    style.addLayer(
+    val stopsLayer =
         CircleLayer("transit-stops-circle", stopsSourceId).withProperties(
             PropertyFactory.circleRadius(5f),
             PropertyFactory.circleColor("#dc2626"),
             PropertyFactory.circleStrokeWidth(4f),
             PropertyFactory.circleStrokeColor("#ffffff"),
-        ),
-    )
+        )
+    selectedLine()?.let { stopsLayer.withFilter(it) }
+    style.addLayer(stopsLayer)
 }

@@ -1,16 +1,21 @@
 package es.elpuertobus.app.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,15 +47,15 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
                 onLineSelected = viewModel::onLineFocused,
                 modifier = Modifier.fillMaxSize(),
             )
-            LineFocusRow(
+            LineFilterBar(
                 swatches = state.lineSwatches,
                 focusedLine = state.focusedLine,
+                onShowAll = viewModel::onShowAllLines,
                 onSelect = viewModel::onLineFocused,
                 modifier =
                     Modifier
                         .align(Alignment.TopCenter)
-                        .statusBarsPadding()
-                        .padding(top = 8.dp),
+                        .statusBarsPadding(),
             )
             state.sheet?.let { sheet ->
                 StopSheet(sheet = sheet, onDismiss = viewModel::dismissSheet)
@@ -73,28 +78,67 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
 }
 
 @Composable
-private fun LineFocusRow(
+private fun LineFilterBar(
     swatches: List<LineSwatch>,
     focusedLine: Int?,
+    onShowAll: () -> Unit,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        shadowElevation = 3.dp,
+        tonalElevation = 2.dp,
     ) {
-        swatches.forEach { swatch ->
-            val label = stringResource(R.string.line_label, swatch.line)
-            val fill = Color(android.graphics.Color.parseColor(swatch.colour))
-            val ink = if (fill.luminance() > 0.62f) Color.Black else Color.White
+        Row(
+            modifier =
+                Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val allLabel = stringResource(R.string.lines_all)
+            FilterChip(
+                selected = focusedLine == null,
+                onClick = onShowAll,
+                label = { Text(allLabel) },
+                modifier =
+                    Modifier
+                        .defaultMinSize(minWidth = 40.dp, minHeight = 48.dp)
+                        .semantics { contentDescription = allLabel },
+            )
+            swatches.forEach { swatch ->
+                LineFilterChip(
+                    swatch = swatch,
+                    selected = focusedLine == swatch.line,
+                    onClick = { onSelect(swatch.line) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LineFilterChip(
+    swatch: LineSwatch,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val label = stringResource(R.string.line_label, swatch.line)
+    val fill = Color(android.graphics.Color.parseColor(swatch.colour))
+    val ink = if (fill.luminance() > 0.62f) Color.Black else Color.White
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = {
             Box(
                 modifier =
                     Modifier
-                        .size(if (focusedLine == swatch.line) 36.dp else 28.dp)
+                        .size(24.dp)
                         .clip(CircleShape)
-                        .background(fill)
-                        .clickable { onSelect(swatch.line) }
-                        .semantics { contentDescription = label },
+                        .background(fill),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -103,8 +147,12 @@ private fun LineFocusRow(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
-        }
-    }
+        },
+        modifier =
+            Modifier
+                .defaultMinSize(minWidth = 40.dp, minHeight = 48.dp)
+                .semantics { contentDescription = label },
+    )
 }
 
 private fun Color.luminance(): Float = 0.299f * red + 0.587f * green + 0.114f * blue
