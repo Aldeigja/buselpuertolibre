@@ -113,12 +113,14 @@ class DepartureBoardTest {
         assertEquals("Terminal Marítima", result.trips.first().upstreamStopName)
         assertEquals(listOf(clock(7, 20), clock(8, 0)), result.timetable.single().times)
         assertEquals("Before", result.timetable.single().originName)
-        assertEquals(listOf(clock(8, 0)), result.trips.map { it.scheduledSeconds })
-        assertFalse(result.trips.single().isPast)
+        assertEquals(listOf(clock(7, 20), clock(8, 0)), result.trips.map { it.scheduledSeconds })
+        assertTrue(result.trips.first().isPast)
+        assertEquals(10, result.trips.first().elapsedMinutes)
+        assertFalse(result.trips.last().isPast)
     }
 
     @Test
-    fun ownClockHidesAfterFiveMinutesAndUpstreamKeepsTwenty() {
+    fun ownClockAndUpstreamKeepTheLastTwentyMinutes() {
         val stops =
             listOf(
                 stop("L4_outbound_001_16", 4, 1, "Plaza de España - Santa Lucía"),
@@ -153,8 +155,21 @@ class DepartureBoardTest {
                     now = ZonedDateTime.of(2026, 11, 5, 11, 50, 0, 0, zone),
                 ),
             )
-        assertEquals(listOf(clock(11, 55)), atFifteenMinutes.trips.map { it.scheduledSeconds })
+        assertEquals(listOf(clock(11, 35), clock(11, 55)), atFifteenMinutes.trips.map { it.scheduledSeconds })
+        assertTrue(atFifteenMinutes.trips.first().isPast)
+        assertEquals(15, atFifteenMinutes.trips.first().elapsedMinutes)
         assertEquals(listOf(clock(11, 35), clock(11, 55)), atFifteenMinutes.timetable.single().times)
+
+        val afterTwentyMinutes =
+            DepartureBoard.build(
+                input(
+                    selected = "L4_outbound_001_16",
+                    stops = stops,
+                    departures = departures,
+                    now = ZonedDateTime.of(2026, 11, 5, 11, 56, 0, 0, zone),
+                ),
+            )
+        assertEquals(listOf(clock(11, 55)), afterTwentyMinutes.trips.map { it.scheduledSeconds })
 
         val upstream =
             DepartureBoard.build(
@@ -385,9 +400,10 @@ class DepartureBoardTest {
                 ),
             )
         val atAncora = beforeTheSplit.trips.filter { !it.downstream }
-        assertEquals(listOf(clock(15, 0), clock(15, 20)), atAncora.map { it.scheduledSeconds })
-        assertEquals("Micaela Aramburu - Las Galeras", atAncora.first().destination)
-        assertEquals("Terminal Marítima", atAncora.last().destination)
+        assertEquals(listOf(clock(14, 40), clock(15, 0), clock(15, 20)), atAncora.map { it.scheduledSeconds })
+        assertEquals("Terminal Marítima", atAncora.first { it.scheduledSeconds == clock(14, 40) }.destination)
+        assertEquals("Micaela Aramburu - Las Galeras", atAncora.first { it.scheduledSeconds == clock(15, 0) }.destination)
+        assertEquals("Terminal Marítima", atAncora.first { it.scheduledSeconds == clock(15, 20) }.destination)
         assertEquals(clock(15, 45), beforeTheSplit.trips.first { it.downstream }.scheduledSeconds)
         assertTrue(clock(15, 10) !in beforeTheSplit.trips.map { it.scheduledSeconds })
 

@@ -26,7 +26,6 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0-phase5"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -80,8 +79,6 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.test.ext.junit)
-    androidTestImplementation(libs.androidx.test.runner)
 }
 
 tasks.register<Copy>("copyTransitSnapshot") {

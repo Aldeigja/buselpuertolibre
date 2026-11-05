@@ -2,6 +2,8 @@ package es.elpuertobus.app.locale
 
 import android.content.Context
 import android.content.res.Configuration
+import android.content.res.Resources
+import android.os.LocaleList
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import java.util.Locale
@@ -18,24 +20,25 @@ object AppLocale {
 
     fun currentTag(context: Context): String = storedTag(context)
 
-    fun applyStored(context: Context) {
-        AppCompatDelegate.setApplicationLocales(
-            LocaleListCompat.forLanguageTags(storedTag(context)),
-        )
+    fun applyStored() {
+        // A framework locale restarts the activity and the map goes black.
+        // Drop any locale stored by an older build. Text uses preferences instead.
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
     }
 
     fun save(context: Context, tag: String) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putString(KEY, tag)
-            .apply()
+            .commit()
     }
 
-    fun wrap(context: Context, tag: String): Context {
+    fun resourcesFor(context: Context, tag: String): Resources {
         val locale = Locale.forLanguageTag(tag)
         val config = Configuration(context.resources.configuration)
-        config.setLocale(locale)
+        config.setLocales(LocaleList(locale))
         config.setLayoutDirection(locale)
-        return context.createConfigurationContext(config)
+        val base = context.applicationContext ?: context
+        return base.createConfigurationContext(config).resources
     }
 }

@@ -59,7 +59,6 @@ data class DepartureBoardResult(
 
 object DepartureBoard {
     const val LOOKBACK_MINUTES = 20
-    const val OWN_CLOCK_LOOKBACK_MINUTES = 5
     const val FEED_LIMIT = 8
     private const val LEFT_AGO_MAX_MINUTES = 30
     private const val FALLBACK_COLOUR = "#2563eb"
@@ -170,7 +169,7 @@ object DepartureBoard {
             val anchor = resolveAnchor(column, index, printedIds) ?: continue
             val anchorStop = column[anchor.index]
             val approximate = isApproximate(input.departures, anchorStop.stopId)
-            val earliest = nowSeconds - lookbackMinutes(anchor) * 60
+            val earliest = nowSeconds - LOOKBACK_MINUTES * 60
             for (seconds in timesFor(input.departures, anchorStop.stopId, profile)) {
                 if (seconds < earliest) {
                     continue
@@ -348,7 +347,7 @@ object DepartureBoard {
         nowSeconds: Int,
     ) {
         fun addOwn(seconds: Int, destination: String) {
-            val earliest = nowSeconds - OWN_CLOCK_LOOKBACK_MINUTES * 60
+            val earliest = nowSeconds - LOOKBACK_MINUTES * 60
             if (seconds < earliest) {
                 return
             }
@@ -467,13 +466,6 @@ object DepartureBoard {
             .filter { it + ANCORA_CONTINUES_AFTER_MINUTES * 60 in fuente }
             .toSet()
     }
-
-    private fun lookbackMinutes(anchor: Anchor): Int =
-        if (anchor.stopsAway == 0 && !anchor.downstream) {
-            OWN_CLOCK_LOOKBACK_MINUTES
-        } else {
-            LOOKBACK_MINUTES
-        }
 
     private fun resolveAnchor(
         column: List<ItineraryStopRef>,

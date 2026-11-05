@@ -47,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -56,9 +57,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
+import es.elpuertobus.app.locale.LocalLanguageTag
+import es.elpuertobus.app.locale.appString
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -86,23 +87,15 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val mapReady = remember { MapReadyHolder() }
-    var locationEnabled by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-            ) == PackageManager.PERMISSION_GRANTED,
-        )
-    }
+    var locationEnabled by remember { mutableStateOf(context.hasLocationFixPermission()) }
     var permissionDeniedOnce by remember { mutableStateOf(false) }
     var selectedLocale by remember { mutableStateOf(AppLocale.currentTag(context)) }
-    val localeContext = remember(selectedLocale) { AppLocale.wrap(context, selectedLocale) }
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestPermission(),
+            ActivityResultContracts.RequestMultiplePermissions(),
         ) { granted ->
-            if (granted) {
+            if (granted.values.any { it }) {
                 permissionDeniedOnce = false
                 locationEnabled = true
                 mapReady.withReady { map, style ->
@@ -113,19 +106,14 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
                 locationEnabled = false
                 scope.launch {
                     snackbarHostState.showSnackbar(
-                        localeContext.getString(R.string.location_unavailable),
+                        AppLocale.resourcesFor(context, selectedLocale).getString(R.string.location_unavailable),
                     )
                 }
             }
         }
 
     fun onMyLocationClick() {
-        val fineGranted =
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-            ) == PackageManager.PERMISSION_GRANTED
-        if (fineGranted) {
+        if (context.hasLocationFixPermission()) {
             locationEnabled = true
             mapReady.withReady { map, style ->
                 MapLocation.setEnabled(map, style, context, enabled = true, moveCamera = true)
@@ -135,12 +123,12 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
         if (permissionDeniedOnce) {
             scope.launch {
                 snackbarHostState.showSnackbar(
-                    localeContext.getString(R.string.location_unavailable),
+                    AppLocale.resourcesFor(context, selectedLocale).getString(R.string.location_unavailable),
                 )
             }
             return
         }
-        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        permissionLauncher.launch(LocationPermissions)
     }
 
     val sheetScaffoldState =
@@ -164,14 +152,19 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
         }
     }
     val sheetValue = sheetScaffoldState.bottomSheetState.currentValue
+    var sheetWasOpen by remember { mutableStateOf(false) }
     LaunchedEffect(sheetValue) {
-        if (sheetShown && sheetValue == SheetValue.Hidden) {
+        if (sheetValue != SheetValue.Hidden) {
+            sheetWasOpen = true
+        } else if (sheetWasOpen) {
+            sheetWasOpen = false
             sheetShown = false
             viewModel.dismissSheet()
         }
     }
 
-    BottomSheetScaffold(
+    CompositionLocalProvider(LocalLanguageTag provides selectedLocale) {
+        BottomSheetScaffold(
         scaffoldState = sheetScaffoldState,
         sheetPeekHeight = 240.dp,
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
@@ -183,7 +176,9 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
         containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         sheetContent = {
-            state.sheet?.let { sheet -> StopSheet(sheet) }
+            key(selectedLocale) {
+                state.sheet?.let { sheet -> StopSheet(sheet) }
+            }
         },
         modifier = Modifier.fillMaxSize(),
     ) { innerPadding ->
@@ -199,37 +194,37 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
                     onLineSelected = viewModel::onLineFocused,
                     modifier = Modifier.fillMaxSize(),
                 )
-                WithAppLocale(localeContext) {
+                key(selectedLocale) {
                     MapChrome(
-                        selectedLocale = selectedLocale,
-                        onLocale = { tag ->
-                            selectedLocale = tag
-                            AppLocale.save(context, tag)
+                    selectedLocale = selectedLocale,
+                    onLocale = { tag ->
+                        selectedLocale = tag
+                        AppLocale.save(context, tag)
+                    },
+                    swatches = state.lineSwatches,
+                    focusedLine = state.focusedLine,
+                    onShowAll = viewModel::onShowAllLines,
+                    onSelectLine = viewModel::onLineFocused,
+                    sheetClearance =
+                        if (state.sheet != null && sheetValue != SheetValue.Hidden) {
+                            innerPadding.calculateBottomPadding()
+                        } else {
+                            0.dp
                         },
-                        swatches = state.lineSwatches,
-                        focusedLine = state.focusedLine,
-                        onShowAll = viewModel::onShowAllLines,
-                        onSelectLine = viewModel::onLineFocused,
-                        sheetClearance =
-                            if (state.sheet != null && sheetValue != SheetValue.Hidden) {
-                                innerPadding.calculateBottomPadding()
-                            } else {
-                                0.dp
-                            },
-                        onNorth = {
-                            mapReady.withReady { map, _ ->
-                                val current = map.cameraPosition
-                                map.animateCamera(
-                                    CameraUpdateFactory.newCameraPosition(
-                                        CameraPosition.Builder(current)
-                                            .bearing(0.0)
-                                            .tilt(0.0)
-                                            .build(),
-                                    ),
-                                )
-                            }
-                        },
-                        onMyLocation = ::onMyLocationClick,
+                    onNorth = {
+                        mapReady.withReady { map, _ ->
+                            val current = map.cameraPosition
+                            map.animateCamera(
+                                CameraUpdateFactory.newCameraPosition(
+                                    CameraPosition.Builder(current)
+                                        .bearing(0.0)
+                                        .tilt(0.0)
+                                        .build(),
+                                ),
+                            )
+                        }
+                    },
+                    onMyLocation = ::onMyLocationClick,
                     )
                 }
             } else if (state.errorMessage != null) {
@@ -238,6 +233,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
                     modifier = Modifier.align(Alignment.Center),
                 )
             }
+        }
         }
     }
 }
@@ -271,16 +267,16 @@ private fun BoxScope.MapChrome(
     val aboveSheet = sheetClearance + 16.dp + if (sheetClearance == 0.dp) navigationInset else 0.dp
     MapControlButton(
         onClick = onNorth,
-        description = stringResource(R.string.compass_north),
+        description = appString(R.string.compass_north),
         icon = Icons.Filled.Explore,
         modifier =
             Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = aboveSheet + 56.dp),
+                .padding(end = 16.dp, bottom = aboveSheet + 48.dp + 8.dp),
     )
     MapControlButton(
         onClick = onMyLocation,
-        description = stringResource(R.string.my_location),
+        description = appString(R.string.my_location),
         icon = Icons.Filled.MyLocation,
         modifier =
             Modifier
@@ -288,7 +284,7 @@ private fun BoxScope.MapChrome(
                 .padding(end = 16.dp, bottom = aboveSheet),
     )
     Text(
-        text = stringResource(R.string.osm_attribution),
+        text = appString(R.string.osm_attribution),
         style = MaterialTheme.typography.labelSmall,
         color = TransitColors.Slate400,
         modifier =
@@ -320,20 +316,6 @@ private fun MapControlButton(
 }
 
 @Composable
-private fun BoxScope.WithAppLocale(
-    localeContext: Context,
-    content: @Composable BoxScope.() -> Unit,
-) {
-    val scope = this
-    CompositionLocalProvider(
-        LocalContext provides localeContext,
-        LocalConfiguration provides localeContext.resources.configuration,
-    ) {
-        scope.content()
-    }
-}
-
-@Composable
 private fun TransitTopFilterBar(
     swatches: List<LineSwatch>,
     focusedLine: Int?,
@@ -352,13 +334,13 @@ private fun TransitTopFilterBar(
         border = BorderStroke(1.dp, TransitColors.Slate200),
     ) {
         Row(
-            modifier = Modifier.height(56.dp),
+            modifier = Modifier.height(48.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             LazyRow(
                 modifier = Modifier.weight(1f).fillMaxHeight(),
                 contentPadding = PaddingValues(start = 8.dp, end = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 item {
@@ -387,7 +369,7 @@ private fun AllLinesControl(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val label = stringResource(R.string.lines_all)
+    val label = appString(R.string.lines_all)
     Box(
         contentAlignment = Alignment.Center,
         modifier =
@@ -414,7 +396,7 @@ private fun LineFilterControl(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val label = stringResource(R.string.line_label, swatch.line)
+    val label = appString(R.string.line_label, swatch.line)
     Box(
         contentAlignment = Alignment.Center,
         modifier =
@@ -435,10 +417,10 @@ private fun LanguageControl(
     onSelect: (String) -> Unit,
 ) {
     val showingSpanish = selected == "es"
-    val label = stringResource(if (showingSpanish) R.string.language_es else R.string.language_en)
+    val label = appString(if (showingSpanish) R.string.language_es else R.string.language_en)
     val nextTag = if (showingSpanish) "en" else "es"
-    val nextName = stringResource(if (showingSpanish) R.string.language_en else R.string.language_es)
-    val description = stringResource(R.string.switch_to_language, nextName)
+    val nextName = appString(if (showingSpanish) R.string.language_en else R.string.language_es)
+    val description = appString(R.string.switch_to_language, nextName)
     Box(
         contentAlignment = Alignment.Center,
         modifier =
@@ -457,3 +439,14 @@ private fun LanguageControl(
         )
     }
 }
+
+private val LocationPermissions =
+    arrayOf(
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION,
+    )
+
+private fun Context.hasLocationFixPermission(): Boolean =
+    LocationPermissions.any { permission ->
+        ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+    }
