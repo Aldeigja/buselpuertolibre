@@ -18,6 +18,9 @@
     <string name="at_timepoint">at %1$s</string>
     <string name="approximate_pass">Approximate pass</string>
     <string name="left_ago">Left ~%1$d m ago</string>
+    <string name="in_minutes">in %1$d min</string>
+    <string name="due_now">now</string>
+    <string name="compass_north">Point north</string>
     <string name="no_more_today">No more scheduled buses on serving lines today.</string>
     <string name="next_departures">Next departures</string>
     <string name="full_timetable">Full timetable</string>

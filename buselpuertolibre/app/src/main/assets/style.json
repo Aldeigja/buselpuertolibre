@@ -1,6 +1,8 @@
 {
   "version": 8,
   "name": "El Puerto offline",
+  "glyphs": "asset://fonts/{fontstack}/{range}.pbf",
+  "sprite": "asset://sprite/sprite",
   "sources": {
     "basemap": {
       "type": "vector",
@@ -11,21 +13,21 @@
     {
       "id": "background",
       "type": "background",
-      "paint": { "background-color": "#e7e1d6" }
+      "paint": { "background-color": "#eceae6" }
     },
     {
       "id": "water",
       "type": "fill",
       "source": "basemap",
       "source-layer": "water",
-      "paint": { "fill-color": "#9ec9e2" }
+      "paint": { "fill-color": "#c5d0d6" }
     },
     {
       "id": "parks",
       "type": "fill",
       "source": "basemap",
       "source-layer": "parks",
-      "paint": { "fill-color": "#b7d7a8" }
+      "paint": { "fill-color": "#d5ddd4" }
     },
     {
       "id": "buildings",
@@ -34,8 +36,8 @@
       "source-layer": "buildings",
       "minzoom": 14,
       "paint": {
-        "fill-color": "#ddd6c8",
-        "fill-outline-color": "#c9c1b2"
+        "fill-color": "#e4e2de",
+        "fill-outline-color": "#d0cdc6"
       }
     },
     {
@@ -45,7 +47,7 @@
       "source-layer": "streets",
       "layout": { "line-cap": "round", "line-join": "round" },
       "paint": {
-        "line-color": "#b9b2a4",
+        "line-color": "#c8c6c2",
         "line-width": [
           "interpolate", ["linear"], ["zoom"],
           12, ["match", ["get", "highway"],
@@ -73,12 +75,12 @@
       "paint": {
         "line-color": [
           "match", ["get", "highway"],
-          ["motorway", "motorway_link", "trunk", "trunk_link"], "#e892a2",
-          ["primary", "primary_link"], "#f4b96a",
-          ["secondary", "secondary_link"], "#f7e07a",
-          ["tertiary", "tertiary_link", "residential", "unclassified", "living_street", "service", "pedestrian"], "#ffffff",
-          ["footway", "path", "cycleway", "steps"], "#d7d1c6",
-          "#ffffff"
+          ["motorway", "motorway_link", "trunk", "trunk_link"], "#d4d0ca",
+          ["primary", "primary_link"], "#ddd9d3",
+          ["secondary", "secondary_link"], "#e4e1dc",
+          ["tertiary", "tertiary_link", "residential", "unclassified", "living_street", "service", "pedestrian"], "#f7f6f4",
+          ["footway", "path", "cycleway", "steps"], "#e0ddd8",
+          "#f7f6f4"
         ],
         "line-width": [
           "interpolate", ["linear"], ["zoom"],
@@ -96,6 +98,159 @@
             ["tertiary", "tertiary_link", "residential", "unclassified", "living_street", "service"], 6,
             1.4]
         ]
+      }
+    },
+    {
+      "id": "places-icon",
+      "type": "symbol",
+      "source": "basemap",
+      "source-layer": "places",
+      "minzoom": 16,
+      "filter": [
+        "in",
+        ["get", "kind"],
+        ["literal", [
+          "pharmacy", "bank", "shop", "supermarket", "convenience",
+          "restaurant", "cafe", "fast_food", "bar", "pub",
+          "school", "kindergarten", "college", "university",
+          "hospital", "clinic", "doctors", "fuel",
+          "park", "playground", "sports_centre", "stadium", "marina"
+        ]]
+      ],
+      "layout": {
+        "icon-image": [
+          "match",
+          ["get", "kind"],
+          "pharmacy", "pharmacy_11",
+          "bank", "bank_11",
+          "shop", "shop_11",
+          "supermarket", "grocery_11",
+          "convenience", "grocery_11",
+          "restaurant", "restaurant_11",
+          "cafe", "cafe_11",
+          "fast_food", "fast_food_11",
+          "bar", "bar_11",
+          "pub", "bar_11",
+          "school", "school_11",
+          "kindergarten", "school_11",
+          "college", "college_11",
+          "university", "college_11",
+          "hospital", "hospital_11",
+          "clinic", "doctors_11",
+          "doctors", "doctors_11",
+          "fuel", "fuel_11",
+          "park", "park_11",
+          "playground", "park_11",
+          "sports_centre", "park_11",
+          "stadium", "park_11",
+          "marina", "park_11",
+          "shop_11"
+        ],
+        "icon-size": 0.9,
+        "icon-allow-overlap": false,
+        "symbol-sort-key": ["get", "rank"]
+      }
+    },
+    {
+      "id": "places-dot",
+      "type": "circle",
+      "source": "basemap",
+      "source-layer": "places",
+      "minzoom": 16,
+      "filter": [
+        "!",
+        [
+          "in",
+          ["get", "kind"],
+          ["literal", [
+            "pharmacy", "bank", "shop", "supermarket", "convenience",
+            "restaurant", "cafe", "fast_food", "bar", "pub",
+            "school", "kindergarten", "college", "university",
+            "hospital", "clinic", "doctors", "fuel",
+            "park", "playground", "sports_centre", "stadium", "marina"
+          ]]
+        ]
+      ],
+      "paint": {
+        "circle-radius": 3,
+        "circle-color": "#64748b",
+        "circle-stroke-width": 1,
+        "circle-stroke-color": "#f7f6f4"
+      }
+    },
+    {
+      "id": "street-names",
+      "type": "symbol",
+      "source": "basemap",
+      "source-layer": "streets",
+      "minzoom": 15,
+      "filter": [
+        "all",
+        ["has", "name"],
+        ["!", ["in", ["get", "highway"], ["literal", ["service", "footway", "path", "steps", "cycleway", "track"]]]]
+      ],
+      "layout": {
+        "text-field": ["get", "name"],
+        "text-font": ["NotoSansRegular"],
+        "text-size": 12,
+        "symbol-placement": "line",
+        "text-rotation-alignment": "map",
+        "text-max-angle": 30,
+        "text-padding": 8
+      },
+      "paint": {
+        "text-color": "#3f3f46",
+        "text-halo-color": "#f7f6f4",
+        "text-halo-width": 1.4
+      }
+    },
+    {
+      "id": "street-names-minor",
+      "type": "symbol",
+      "source": "basemap",
+      "source-layer": "streets",
+      "minzoom": 17,
+      "filter": [
+        "all",
+        ["has", "name"],
+        ["in", ["get", "highway"], ["literal", ["service", "footway", "path", "steps", "cycleway", "track"]]]
+      ],
+      "layout": {
+        "text-field": ["get", "name"],
+        "text-font": ["NotoSansRegular"],
+        "text-size": 11,
+        "symbol-placement": "line",
+        "text-rotation-alignment": "map",
+        "text-max-angle": 30,
+        "text-padding": 10
+      },
+      "paint": {
+        "text-color": "#52525b",
+        "text-halo-color": "#f7f6f4",
+        "text-halo-width": 1.2
+      }
+    },
+    {
+      "id": "place-names",
+      "type": "symbol",
+      "source": "basemap",
+      "source-layer": "places",
+      "minzoom": 16,
+      "layout": {
+        "text-field": ["get", "name"],
+        "text-font": ["NotoSansRegular"],
+        "text-size": 11,
+        "text-anchor": "top",
+        "text-offset": [0, 1.1],
+        "text-max-width": 8,
+        "text-optional": true,
+        "text-padding": 4,
+        "symbol-sort-key": ["get", "rank"]
+      },
+      "paint": {
+        "text-color": "#27272a",
+        "text-halo-color": "#f7f6f4",
+        "text-halo-width": 1.4
       }
     }
   ]

@@ -19,7 +19,7 @@ OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 SOUTH, WEST, NORTH, EAST = 36.54, -6.32, 36.66, -6.10
 
 BASEMAP_QUERY = f"""
-[out:json][timeout:180];
+[out:json][timeout:240];
 (
   way["highway"]({SOUTH},{WEST},{NORTH},{EAST});
   way["waterway"~"^(riverbank|dock|canal|river)$"]({SOUTH},{WEST},{NORTH},{EAST});
@@ -27,11 +27,57 @@ BASEMAP_QUERY = f"""
   way["landuse"~"^(forest|grass|meadow|recreation_ground|cemetery|vineyard|orchard|allotments|reservoir)$"]({SOUTH},{WEST},{NORTH},{EAST});
   way["leisure"~"^(park|garden|pitch|playground|nature_reserve)$"]({SOUTH},{WEST},{NORTH},{EAST});
   way["building"]({SOUTH},{WEST},{NORTH},{EAST});
+  node["name"]["amenity"]({SOUTH},{WEST},{NORTH},{EAST});
+  node["name"]["shop"]({SOUTH},{WEST},{NORTH},{EAST});
+  node["name"]["tourism"]({SOUTH},{WEST},{NORTH},{EAST});
+  node["name"]["leisure"]({SOUTH},{WEST},{NORTH},{EAST});
+  way["name"]["amenity"]({SOUTH},{WEST},{NORTH},{EAST});
+  way["name"]["shop"]({SOUTH},{WEST},{NORTH},{EAST});
+  way["name"]["tourism"]({SOUTH},{WEST},{NORTH},{EAST});
 );
 out geom;
 """.strip()
 
 WATER_KEYS = {"natural": {"water", "bay", "wetland"}, "waterway": {"riverbank", "dock", "canal", "river"}, "landuse": {"reservoir"}}
+
+# Named places worth a label. Benches, bins, and parking spaces stay off the map.
+SKIP_AMENITY = {
+    "atm",
+    "bench",
+    "bicycle_parking",
+    "drinking_water",
+    "parking",
+    "parking_entrance",
+    "parking_space",
+    "post_box",
+    "recycling",
+    "shelter",
+    "telephone",
+    "toilets",
+    "vending_machine",
+    "waste_basket",
+    "waste_disposal",
+}
+SKIP_TOURISM = {"artwork", "information", "yes"}
+PLACE_RANK = {
+    "hospital": 0,
+    "clinic": 1,
+    "doctors": 1,
+    "pharmacy": 2,
+    "school": 3,
+    "kindergarten": 3,
+    "college": 3,
+    "university": 3,
+    "bank": 4,
+    "supermarket": 5,
+    "convenience": 5,
+    "fuel": 6,
+    "restaurant": 7,
+    "cafe": 7,
+    "fast_food": 7,
+    "bar": 8,
+    "pub": 8,
+}
 PARK_KEYS = {
     "landuse": {"forest", "grass", "meadow", "recreation_ground", "cemetery", "vineyard", "orchard", "allotments"},
     "leisure": {"park", "garden", "pitch", "playground", "nature_reserve"},
@@ -44,6 +90,41 @@ def basemap_assets_dir(root: Path | None = None) -> Path:
 
 def basemap_snapshot(root: Path | None = None) -> Path:
     return (root or local_pipeline_dir()) / "data" / BASEMAP_FILENAME
+
+
+def place_properties(tags: dict) -> dict | None:
+    """A named shop, amenity, or similar place. Streets are labelled separately."""
+    name = str(tags.get("name") or "").strip()
+    if not name:
+        return None
+    amenity = str(tags.get("amenity") or "")
+    shop = str(tags.get("shop") or "")
+    tourism = str(tags.get("tourism") or "")
+    leisure = str(tags.get("leisure") or "")
+    if amenity in SKIP_AMENITY:
+        amenity = ""
+    if tourism in SKIP_TOURISM:
+        tourism = ""
+    if leisure not in {"park", "playground", "sports_centre", "stadium", "marina"}:
+        leisure = ""
+    kind = amenity or (f"shop" if shop else "") or tourism or leisure
+    if not kind:
+        return None
+    return {"name": name, "kind": kind, "rank": PLACE_RANK.get(kind, 12)}
+
+
+def _centroid(coords: list[list[float]]) -> list[float] | None:
+    if not coords:
+        return None
+    return [sum(point[0] for point in coords) / len(coords), sum(point[1] for point in coords) / len(coords)]
+
+
+def _point(lon: float, lat: float, properties: dict) -> dict:
+    return {
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [lon, lat]},
+        "properties": properties,
+    }
 
 
 def fetch_basemap(dest: Path) -> None:
@@ -261,14 +342,25 @@ def _feature(coords: list[list[float]], properties: dict, polygon: bool) -> dict
     return {"type": "Feature", "geometry": geometry, "properties": properties}
 
 
-def export_layers(overpass_path: Path, directory: Path) -> dict[str, Path]:
-    payload = json.loads(overpass_path.read_text(encoding="utf-8"))
-    buckets: dict[str, list[dict]] = {"water": [], "parks": [], "buildings": [], "streets": []}
+def features_from_payload(payload: dict) -> tuple[dict[str, list[dict]], list[list[list[float]]]]:
+    buckets: dict[str, list[dict]] = {
+        "water": [],
+        "parks": [],
+        "buildings": [],
+        "streets": [],
+        "places": [],
+    }
     coasts: list[list[list[float]]] = []
     for element in payload.get("elements", []):
-        if element.get("type") != "way":
-            continue
+        kind = element.get("type")
         tags = element.get("tags") or {}
+        if kind == "node":
+            place = place_properties(tags)
+            if place and "lon" in element and "lat" in element:
+                buckets["places"].append(_point(float(element["lon"]), float(element["lat"]), place))
+            continue
+        if kind != "way":
+            continue
         coords = _coords(element)
         if tags.get("natural") == "coastline":
             coasts.append(coords)
@@ -277,21 +369,27 @@ def export_layers(overpass_path: Path, directory: Path) -> dict[str, Path]:
             feature = _feature(coords, {"kind": tags.get("natural") or tags.get("waterway") or "water"}, polygon=True)
             if feature:
                 buckets["water"].append(feature)
-            continue
-        if tags.get("landuse") in PARK_KEYS["landuse"] or tags.get("leisure") in PARK_KEYS["leisure"]:
+        elif tags.get("landuse") in PARK_KEYS["landuse"] or tags.get("leisure") in PARK_KEYS["leisure"]:
             feature = _feature(coords, {"kind": tags.get("landuse") or tags.get("leisure") or "park"}, polygon=True)
             if feature:
                 buckets["parks"].append(feature)
-            continue
         if "building" in tags:
             feature = _feature(coords, {"building": tags.get("building") or "yes"}, polygon=True)
             if feature:
                 buckets["buildings"].append(feature)
-            continue
         if "highway" in tags:
-            feature = _feature(coords, {"highway": tags.get("highway") or ""}, polygon=False)
+            properties = {"highway": tags.get("highway") or ""}
+            street_name = str(tags.get("name") or tags.get("ref") or "").strip()
+            if street_name:
+                properties["name"] = street_name
+            feature = _feature(coords, properties, polygon=False)
             if feature:
                 buckets["streets"].append(feature)
+        place = place_properties(tags)
+        if place:
+            center = _centroid(coords)
+            if center:
+                buckets["places"].append(_point(center[0], center[1], place))
     ring = sea_ring(coasts, WEST, SOUTH, EAST, NORTH)
     if ring:
         buckets["water"].append(
@@ -301,6 +399,12 @@ def export_layers(overpass_path: Path, directory: Path) -> dict[str, Path]:
                 "properties": {"kind": "sea"},
             }
         )
+    return buckets, coasts
+
+
+def export_layers(overpass_path: Path, directory: Path) -> dict[str, Path]:
+    payload = json.loads(overpass_path.read_text(encoding="utf-8"))
+    buckets, _coasts = features_from_payload(payload)
     directory.mkdir(parents=True, exist_ok=True)
     paths: dict[str, Path] = {}
     for name, features in buckets.items():
@@ -325,6 +429,19 @@ def build_pmtiles(layers: dict[str, Path], pmtiles_out: Path) -> None:
         layer_args: list[str] = []
         for name in ("water", "parks", "buildings", "streets"):
             layer_args.extend(["-L", f"{name}:{layers[name]}"])
+        layer_args.extend(
+            [
+                "-L",
+                json.dumps(
+                    {
+                        "file": str(layers["places"]),
+                        "layer": "places",
+                        "minzoom": 15,
+                        "maxzoom": 16,
+                    }
+                ),
+            ]
+        )
         subprocess.run(
             [
                 "tippecanoe",
@@ -343,10 +460,10 @@ def build_pmtiles(layers: dict[str, Path], pmtiles_out: Path) -> None:
         )
 
 
-def ensure_basemap(root: Path | None = None, *, use_network: bool = True) -> Path:
+def ensure_basemap(root: Path | None = None, *, use_network: bool = True, refresh: bool = False) -> Path:
     root = root or local_pipeline_dir()
     snapshot = basemap_snapshot(root)
-    if not snapshot.is_file():
+    if refresh or not snapshot.is_file():
         if not use_network:
             raise RuntimeError(f"Missing {snapshot}. Build the basemap once with network.")
         fetch_basemap(snapshot)

@@ -16,9 +16,52 @@ fun localBasemapStyleJson(context: Context): String {
             }
         }
     }
+    val fonts = copyFontAssets(context)
+    val sprite = copySpriteAssets(context)
     val style = context.assets.open("style.json").bufferedReader().use { it.readText() }
-    return style.replace(
-        "pmtiles://asset://el_puerto.pmtiles",
-        "pmtiles://file://${archive.absolutePath}",
-    )
+    return style
+        .replace(
+            "pmtiles://asset://el_puerto.pmtiles",
+            "pmtiles://file://${archive.absolutePath}",
+        )
+        .replace(
+            "asset://fonts/{fontstack}/{range}.pbf",
+            "file://${fonts.absolutePath}/{fontstack}/{range}.pbf",
+        )
+        .replace(
+            "asset://sprite/sprite",
+            "file://${sprite.absolutePath}/sprite",
+        )
+}
+
+private fun copySpriteAssets(context: Context): File {
+    val dest = File(context.filesDir, "sprite")
+    dest.mkdirs()
+    listOf("sprite.json", "sprite.png", "sprite@2x.json", "sprite@2x.png").forEach { name ->
+        val out = File(dest, name)
+        val bytes = context.assets.open("sprite/$name").use { it.readBytes() }
+        if (!out.exists() || out.length() != bytes.size.toLong()) {
+            out.writeBytes(bytes)
+        }
+    }
+    return dest
+}
+
+private fun copyFontAssets(context: Context): File {
+    val dest = File(context.filesDir, "fonts")
+    val stacks = context.assets.list("fonts").orEmpty()
+    for (stack in stacks) {
+        val outDir = File(dest, stack)
+        outDir.mkdirs()
+        val files = context.assets.list("fonts/$stack").orEmpty()
+        for (name in files) {
+            val out = File(outDir, name)
+            val bytes = context.assets.open("fonts/$stack/$name").use { it.readBytes() }
+            if (out.exists() && out.length() == bytes.size.toLong()) {
+                continue
+            }
+            out.writeBytes(bytes)
+        }
+    }
+    return dest
 }

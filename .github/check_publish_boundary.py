@@ -163,7 +163,11 @@ def path_denied(rel: str) -> str | None:
             return f"denylisted name pattern {pattern!r}: {rel}"
     lower = rel.lower()
     if lower.endswith(".json"):
-        if rel == "buselpuertolibre/app/src/main/assets/style.json":
+        if rel in {
+            "buselpuertolibre/app/src/main/assets/style.json",
+            "buselpuertolibre/app/src/main/assets/sprite/sprite.json",
+            "buselpuertolibre/app/src/main/assets/sprite/sprite@2x.json",
+        }:
             return None
         if not rel.startswith(FIXTURE_JSON_PREFIX):
             return f"JSON outside {FIXTURE_JSON_PREFIX}: {rel}"

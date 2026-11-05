@@ -3,11 +3,20 @@
 
 from __future__ import annotations
 
+import argparse
+
 from elpuerto.basemap import ensure_basemap
 
 
 def main() -> int:
-    path = ensure_basemap()
+    parser = argparse.ArgumentParser(description="Write the municipal PMTiles basemap.")
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Download a new Overpass snapshot before tiling.",
+    )
+    args = parser.parse_args()
+    path = ensure_basemap(refresh=args.refresh)
     print(f"Basemap: {path} ({path.stat().st_size} bytes)")
     return 0
 

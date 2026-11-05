@@ -14,6 +14,11 @@ from elpuerto.models import ColumnSide, ItineraryStop
 _TELEPORT_HOP_M = 2_000.0
 _SAME_SHELTER_M = 100.0
 
+# Line 1's relation lists Pza. Noria - Golondrina. The bus stops at Pza. Noria,
+# the platform Line 4 uses on the way to San Bartolomé.
+_L1_LISTED_AT_GOLONDRINA = 13392814811
+_L1_STOPS_AT_NORIA = 13406610340
+
 ROUTES_FILENAME = "elpuerto_bus_routes_OSM.json"
 MAP_FILENAME = "elpuerto_bus_map_osm.geojson"
 
@@ -53,7 +58,7 @@ def map_path(curation: Path) -> Path:
 def load_route_stops(path: Path) -> list[ItineraryStop]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     stops: list[ItineraryStop] = []
-    for route in payload.get("routes", []):
+    for route in serve_line1_at_plaza_noria(payload.get("routes", [])):
         line = int(route["line_ref"])
         direction = str(route.get("direction") or "outbound")
         column = ColumnSide.RIGHT if direction == "inbound" else ColumnSide.LEFT
@@ -83,6 +88,33 @@ def load_route_stops(path: Path) -> list[ItineraryStop]:
     if missing:
         raise RuntimeError(f"OSM routes missing lines: {sorted(missing)}")
     return stops
+
+
+def serve_line1_at_plaza_noria(routes: list[dict]) -> list[dict]:
+    """Use the Pza. Noria shelter for Line 1 instead of Pza. Noria - Golondrina."""
+    shelter = None
+    for route in routes:
+        if str(route.get("line_ref")) != "4":
+            continue
+        for stop in route.get("stops", []):
+            if int(stop["osm_node_id"]) == _L1_STOPS_AT_NORIA:
+                shelter = stop
+                break
+    if shelter is None:
+        return routes
+    for route in routes:
+        if str(route.get("line_ref")) != "1":
+            continue
+        stops = route.get("stops", [])
+        for index, stop in enumerate(stops):
+            if int(stop["osm_node_id"]) != _L1_LISTED_AT_GOLONDRINA:
+                continue
+            placed = dict(shelter)
+            placed["stop_sequence"] = stop["stop_sequence"]
+            if "sequence_index" in stop:
+                placed["sequence_index"] = stop["sequence_index"]
+            stops[index] = placed
+    return routes
 
 
 def without_teleported_repeats(stops: list[dict]) -> list[dict]:

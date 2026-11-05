@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -58,7 +59,10 @@ import es.elpuertobus.app.map.MapLocation
 import es.elpuertobus.app.map.MapReadyHolder
 import es.elpuertobus.app.map.MapViewModel
 import es.elpuertobus.app.map.OfflineMapView
+import es.elpuertobus.app.ui.theme.TransitColors
 import kotlinx.coroutines.launch
+import org.maplibre.android.camera.CameraPosition
+import org.maplibre.android.camera.CameraUpdateFactory
 
 @Composable
 fun MapScreen(viewModel: MapViewModel = viewModel()) {
@@ -167,6 +171,30 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
                         )
                     }
                     FloatingActionButton(
+                        onClick = {
+                            mapReady.withReady { map, _ ->
+                                val current = map.cameraPosition
+                                map.animateCamera(
+                                    CameraUpdateFactory.newCameraPosition(
+                                        CameraPosition.Builder(current)
+                                            .bearing(0.0)
+                                            .tilt(0.0)
+                                            .build(),
+                                    ),
+                                )
+                            }
+                        },
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(end = 16.dp, bottom = 120.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Explore,
+                            contentDescription = stringResource(R.string.compass_north),
+                        )
+                    }
+                    FloatingActionButton(
                         onClick = ::onMyLocationClick,
                         modifier =
                             Modifier
@@ -184,6 +212,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
                     Text(
                         text = stringResource(R.string.osm_attribution),
                         style = MaterialTheme.typography.labelSmall,
+                        color = TransitColors.Slate400,
                         modifier =
                             Modifier
                                 .align(Alignment.BottomStart)
@@ -308,7 +337,7 @@ private fun LineFilterChip(
 ) {
     val label = stringResource(R.string.line_label, swatch.line)
     val fill = Color(android.graphics.Color.parseColor(swatch.colour))
-    val ink = if (fill.luminance() > 0.62f) Color.Black else Color.White
+    val ink = if (fill.luminance() > 0.62f) TransitColors.SlateInkOnLightBadge else TransitColors.WhiteInk
     FilterChip(
         selected = selected,
         onClick = onClick,
@@ -324,7 +353,7 @@ private fun LineFilterChip(
                 Text(
                     text = swatch.line.toString(),
                     color = ink,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
                 )
             }
         },

@@ -1,0 +1,3 @@
+Map place icons use the OSM Liberty sprite (Maki-derived).
+Source: https://github.com/maputnik/osm-liberty (see LICENSE.md in that repository).
+Bundled as sprite.json, sprite.png, sprite@2x.json, sprite@2x.png for offline MapLibre.

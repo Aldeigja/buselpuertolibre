@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import es.elpuertobus.app.ui.MapScreen
+import es.elpuertobus.app.ui.theme.BusElPuertoTheme
 import org.maplibre.android.MapLibre
 
 class MainActivity : AppCompatActivity() {
@@ -16,8 +17,10 @@ class MainActivity : AppCompatActivity() {
         MapLibre.getInstance(applicationContext)
         enableEdgeToEdge()
         setContent {
-            Surface(modifier = Modifier.fillMaxSize()) {
-                MapScreen()
+            BusElPuertoTheme {
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    MapScreen()
+                }
             }
         }
     }

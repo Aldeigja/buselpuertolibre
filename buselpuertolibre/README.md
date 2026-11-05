@@ -15,7 +15,7 @@ Requires JDK 21 (Temurin), Android SDK platform **37.0** (`platforms;android-37.
 2. Build the municipal PMTiles basemap (needs `tippecanoe` and `pmtiles` on `PATH`):
 
    ```bash
-   PYTHONPATH=pipeline python3 pipeline/build_basemap.py
+   PYTHONPATH=pipeline python3 pipeline/build_basemap.py --refresh
    ```
 
 3. Run the host unit test and compile the debug APK (set `JAVA_HOME` to JDK 21 if the default JDK is newer):

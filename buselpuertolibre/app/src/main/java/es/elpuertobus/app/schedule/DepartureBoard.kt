@@ -32,6 +32,7 @@ data class UpcomingTrip(
     val scheduledSeconds: Int,
     val isPast: Boolean,
     val elapsedMinutes: Int,
+    val minutesUntil: Int,
     val downstream: Boolean,
     val approximate: Boolean,
 )
@@ -217,6 +218,7 @@ object DepartureBoard {
             scheduledSeconds = seconds,
             isPast = seconds < nowSeconds,
             elapsedMinutes = if (seconds < nowSeconds) elapsed else 0,
+            minutesUntil = if (seconds >= nowSeconds) (seconds - nowSeconds) / 60 else 0,
             downstream = downstream,
             approximate = approximate,
         )

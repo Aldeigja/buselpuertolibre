@@ -18,6 +18,9 @@
     <string name="at_timepoint">en %1$s</string>
     <string name="approximate_pass">Paso aproximado</string>
     <string name="left_ago">Salió hace ~%1$d min</string>
+    <string name="in_minutes">en %1$d min</string>
+    <string name="due_now">ahora</string>
+    <string name="compass_north">Apuntar al norte</string>
     <string name="no_more_today">No hay más salidas programadas hoy en estas líneas.</string>
     <string name="next_departures">Próximas salidas</string>
     <string name="full_timetable">Horario completo</string>

@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 import extract_osm_bus as osm_bus
-from elpuerto.osm_routes import without_teleported_repeats
+from elpuerto.osm_routes import serve_line1_at_plaza_noria, without_teleported_repeats
 
 parse_bus_routes = osm_bus.parse_bus_routes
 parse_line_ref = osm_bus.parse_line_ref
@@ -30,6 +30,39 @@ class TeleportedRepeatTest(unittest.TestCase):
             "Micaela Aramburu - Las Galeras",
             "Poblado de Doña Blanca",
         ])
+
+
+class Line1NoriaTest(unittest.TestCase):
+    def test_moves_line1_onto_plaza_noria_and_leaves_the_other_lines(self) -> None:
+        golondrina = {
+            "stop_sequence": 22,
+            "sequence_index": 21,
+            "osm_node_id": 13392814811,
+            "name": "Pza. Noria - Golondrina",
+            "lat": 36.593613,
+            "lon": -6.2355833,
+        }
+        noria = {
+            "stop_sequence": 24,
+            "sequence_index": 23,
+            "osm_node_id": 13406610340,
+            "name": "Pza. Noria",
+            "lat": 36.5938536,
+            "lon": -6.2359652,
+        }
+        routes = [
+            {"line_ref": "1", "stops": [dict(golondrina)]},
+            {"line_ref": "2", "stops": [dict(golondrina, stop_sequence=15)]},
+            {"line_ref": "4", "stops": [dict(golondrina, stop_sequence=19), dict(noria)]},
+        ]
+        serve_line1_at_plaza_noria(routes)
+        line1 = routes[0]["stops"][0]
+        self.assertEqual(line1["osm_node_id"], 13406610340)
+        self.assertEqual(line1["name"], "Pza. Noria")
+        self.assertEqual(line1["stop_sequence"], 22)
+        self.assertEqual(routes[1]["stops"][0]["osm_node_id"], 13392814811)
+        self.assertEqual(routes[2]["stops"][0]["name"], "Pza. Noria - Golondrina")
+        self.assertEqual(routes[2]["stops"][1]["stop_sequence"], 24)
 
 
 class ParseLineRefTest(unittest.TestCase):
