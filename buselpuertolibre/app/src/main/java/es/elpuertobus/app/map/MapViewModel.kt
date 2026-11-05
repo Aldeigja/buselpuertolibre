@@ -71,6 +71,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                                 serviceDay = row.serviceDay,
                                 secondsSinceMidnight = row.secondsSinceMidnight,
                                 boundStopId = row.boundStopId,
+                                columnLabel = row.columnLabel,
                             )
                         }
                     holidayDatesCache =

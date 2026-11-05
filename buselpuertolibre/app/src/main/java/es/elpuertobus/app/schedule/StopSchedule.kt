@@ -15,6 +15,7 @@ data class DepartureSnapshot(
     val serviceDay: String,
     val secondsSinceMidnight: Int,
     val boundStopId: String,
+    val columnLabel: String = "",
 )
 
 data class StopScheduleInput(

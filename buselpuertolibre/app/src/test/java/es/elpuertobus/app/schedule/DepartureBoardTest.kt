@@ -234,6 +234,61 @@ class DepartureBoardTest {
         assertEquals(clock(7, 40), trip.scheduledSeconds)
     }
 
+    @Test
+    fun line3ApproximateColumnsStayLabeled() {
+        val now = ZonedDateTime.of(2026, 11, 4, 11, 45, 0, 0, zone)
+        val stops =
+            listOf(
+                stop("L3_outbound_001_10", 3, 1, "Plaza del Polvorista"),
+                stop("L3_outbound_002_20", 3, 2, "Av. Eduardo y Felipe Osborne - Goya"),
+                stop("L3_outbound_003_30", 3, 3, "Áncora - El Ancla"),
+                stop("L3_outbound_004_40", 3, 4, "Fuentebravía"),
+                stop("L3_outbound_005_50", 3, 5, "Poblado Naval"),
+                stop("L3_outbound_006_60", 3, 6, "Colegio Público de Valdelagrana"),
+            )
+        val departures =
+            listOf(
+                DepartureSnapshot(3, "laborables", clock(11, 35), "L3_outbound_001_10", "PZA.POLVORISTA"),
+                DepartureSnapshot(3, "laborables", clock(11, 40), "L3_outbound_003_30", "ANCORA"),
+                DepartureSnapshot(3, "laborables", clock(15, 10), "L3_outbound_004_40", "FUENTEBRAVIA"),
+                DepartureSnapshot(3, "laborables", clock(7, 35), "L3_outbound_006_60", "VALDELAGRANA"),
+            )
+        val atNaval =
+            DepartureBoard.build(
+                input(selected = "L3_outbound_005_50", stops = stops, departures = departures, now = now),
+            )
+        val fuentebravia = atNaval.trips.single()
+        assertEquals("Fuentebravía", fuentebravia.upstreamStopName)
+        assertTrue(fuentebravia.approximate)
+
+        val atOsborne =
+            DepartureBoard.build(
+                input(selected = "L3_outbound_002_20", stops = stops, departures = departures, now = now),
+            )
+        val polvorista = atOsborne.trips.single()
+        assertEquals("Plaza del Polvorista", polvorista.upstreamStopName)
+        assertFalse(polvorista.approximate)
+
+        assertTrue(timetableAt("L3_outbound_003_30", stops, departures, now).approximate)
+        assertTrue(timetableAt("L3_outbound_006_60", stops, departures, now).approximate)
+        assertFalse(timetableAt("L3_outbound_001_10", stops, departures, now).approximate)
+
+        val line6 =
+            DepartureBoard.build(
+                input(
+                    selected = "L6_outbound_001_70",
+                    stops = listOf(stop("L6_outbound_001_70", 6, 1, "Fuentebravía")),
+                    departures =
+                        listOf(
+                            DepartureSnapshot(6, "laborables", clock(11, 45), "L6_outbound_001_70", "FUENTEBRAVÍA"),
+                        ),
+                    now = now,
+                ),
+            )
+        assertFalse(line6.trips.single().approximate)
+        assertFalse(line6.timetable.single().approximate)
+    }
+
     private fun input(
         selected: String,
         stops: List<ItineraryStopRef>,
@@ -250,6 +305,16 @@ class DepartureBoardTest {
             zoneId = zone,
             now = now,
         )
+
+    private fun timetableAt(
+        selected: String,
+        stops: List<ItineraryStopRef>,
+        departures: List<DepartureSnapshot>,
+        now: ZonedDateTime,
+    ): PrintedTimetableLine =
+        DepartureBoard.build(
+            input(selected = selected, stops = stops, departures = departures, now = now),
+        ).timetable.single()
 
     private fun stop(
         id: String,

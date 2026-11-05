@@ -33,6 +33,7 @@ data class UpcomingTrip(
     val isPast: Boolean,
     val elapsedMinutes: Int,
     val downstream: Boolean,
+    val approximate: Boolean,
 )
 
 data class PrintedTimetableLine(
@@ -41,6 +42,7 @@ data class PrintedTimetableLine(
     val destination: String,
     val lineClosedToday: Boolean,
     val times: List<Int>,
+    val approximate: Boolean,
 )
 
 data class DepartureBoardResult(
@@ -57,6 +59,9 @@ object DepartureBoard {
     const val FEED_LIMIT = 8
     private const val LEFT_AGO_MAX_MINUTES = 30
     private const val FALLBACK_COLOUR = "#2563eb"
+
+    /** Line 3 winter columns headed "PASO APROX." in the brochure. */
+    private val APPROXIMATE_COLUMNS = setOf("VALDELAGRANA", "ANCORA", "FUENTEBRAVIA")
 
     fun build(input: DepartureBoardInput): DepartureBoardResult {
         val selected = input.stops.find { it.stopId == input.selectedStopId }
@@ -102,6 +107,7 @@ object DepartureBoard {
                             } else {
                                 timesFor(input.departures, occurrence.stopId, profile)
                             },
+                        approximate = isApproximate(input.departures, occurrence.stopId),
                     ),
                 )
             }
@@ -110,6 +116,7 @@ object DepartureBoard {
             }
             val anchor = resolveAnchor(column, index, printedIds) ?: continue
             val anchorStop = column[anchor.index]
+            val approximate = isApproximate(input.departures, anchorStop.stopId)
             val earliest = nowSeconds - lookbackMinutes(anchor) * 60
             for (seconds in timesFor(input.departures, anchorStop.stopId, profile)) {
                 if (seconds < earliest) {
@@ -128,6 +135,7 @@ object DepartureBoard {
                         isPast = seconds < nowSeconds,
                         elapsedMinutes = if (seconds < nowSeconds) elapsed else 0,
                         downstream = anchor.downstream,
+                        approximate = approximate,
                     ),
                 )
             }
@@ -194,6 +202,9 @@ object DepartureBoard {
             }
             .sortedBy { it.sequence }
     }
+
+    private fun isApproximate(departures: List<DepartureSnapshot>, stopId: String): Boolean =
+        departures.any { it.boundStopId == stopId && it.columnLabel in APPROXIMATE_COLUMNS }
 
     private fun timesFor(
         departures: List<DepartureSnapshot>,

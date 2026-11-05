@@ -5,6 +5,10 @@
     <string name="season_title">Invierno 2026/2027</string>
     <string name="line_label">Línea %1$d</string>
     <string name="lines_all">Todas</string>
+    <string name="my_location">Mi ubicación</string>
+    <string name="location_unavailable">Ubicación no disponible. Actívala en Ajustes para ver dónde estás.</string>
+    <string name="language_en">EN</string>
+    <string name="language_es">ES</string>
     <string name="tab_overview">Salidas</string>
     <string name="tab_timetable">Horario</string>
     <string name="upstream_notice">Horas de salida desde la parada anterior. Esta parada no tiene hora fija en el folleto.</string>
@@ -12,6 +16,7 @@
     <string name="from_upstream_single">desde %1$s (1 parada antes)</string>
     <string name="towards_downstream">hacia %1$s (primera parada con hora, a %2$d paradas)</string>
     <string name="at_timepoint">en %1$s</string>
+    <string name="approximate_pass">Paso aproximado</string>
     <string name="left_ago">Salió hace ~%1$d min</string>
     <string name="no_more_today">No hay más salidas programadas hoy en estas líneas.</string>
     <string name="next_departures">Próximas salidas</string>

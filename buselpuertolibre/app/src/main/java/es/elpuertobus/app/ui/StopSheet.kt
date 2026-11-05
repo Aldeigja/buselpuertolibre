@@ -153,6 +153,13 @@ private fun TripRow(trip: UpcomingTrip) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (trip.approximate) {
+                Text(
+                    text = stringResource(R.string.approximate_pass),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (DepartureBoard.showLeftAgo(trip)) {
                 Text(
                     text = stringResource(R.string.left_ago, trip.elapsedMinutes),
@@ -192,6 +199,13 @@ private fun TimetablePage(lines: List<PrintedTimetableLine>) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (line.approximate) {
+                    Text(
+                        text = stringResource(R.string.approximate_pass),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.height(8.dp))

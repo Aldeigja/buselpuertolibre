@@ -32,6 +32,8 @@ fun OfflineMapView(
     stopsGeoJson: String,
     routesGeoJson: String,
     focusedLine: Int?,
+    mapReady: MapReadyHolder,
+    locationEnabled: Boolean,
     onStopSelected: (String) -> Unit = {},
     onLineSelected: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -39,6 +41,7 @@ fun OfflineMapView(
     val onStopSelectedState = rememberUpdatedState(onStopSelected)
     val onLineSelectedState = rememberUpdatedState(onLineSelected)
     val focusedLineState = rememberUpdatedState(focusedLine)
+    val locationEnabledState = rememberUpdatedState(locationEnabled)
     val clickListenerAttached = remember { AtomicBoolean(false) }
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -76,6 +79,14 @@ fun OfflineMapView(
                     map.uiSettings.isAttributionEnabled = true
                     map.setStyle(Style.Builder().fromJson(localBasemapStyleJson(context))) { style ->
                         applyOverlays(style, stopsGeoJson, routesGeoJson, focusedLineState.value)
+                        mapReady.map = map
+                        mapReady.style = style
+                        MapLocation.setEnabled(
+                            map,
+                            style,
+                            context,
+                            locationEnabledState.value,
+                        )
                         if (clickListenerAttached.compareAndSet(false, true)) {
                             map.addOnMapClickListener { point ->
                                 val screen = map.projection.toScreenLocation(point)
@@ -117,7 +128,10 @@ fun OfflineMapView(
         update = { view ->
             view.getMapAsync { map ->
                 map.getStyle { style ->
+                    mapReady.map = map
+                    mapReady.style = style
                     applyOverlays(style, stopsGeoJson, routesGeoJson, focusedLine)
+                    MapLocation.setEnabled(map, style, context, locationEnabled)
                 }
             }
         },
