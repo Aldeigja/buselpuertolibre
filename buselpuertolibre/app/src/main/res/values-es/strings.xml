@@ -5,6 +5,15 @@
     <string name="season_title">Invierno 2026/2027</string>
     <string name="line_label">Línea %1$d</string>
     <string name="lines_all">Todas</string>
+    <string name="tab_overview">Salidas</string>
+    <string name="tab_timetable">Horario</string>
+    <string name="upstream_notice">Horas de salida desde la parada anterior. Esta parada no tiene hora fija en el folleto.</string>
+    <string name="from_upstream">desde %1$s (%2$d paradas antes)</string>
+    <string name="from_upstream_single">desde %1$s (1 parada antes)</string>
+    <string name="towards_downstream">hacia %1$s (primera parada con hora, a %2$d paradas)</string>
+    <string name="at_timepoint">en %1$s</string>
+    <string name="left_ago">Salió hace ~%1$d min</string>
+    <string name="no_more_today">No hay más salidas programadas hoy en estas líneas.</string>
     <string name="next_departures">Próximas salidas</string>
     <string name="full_timetable">Horario completo</string>
     <string name="no_printed_clock">Esta parada no tiene hora impresa en el horario.</string>
@@ -13,4 +22,5 @@
     <string name="profile_laborables">Laborables</string>
     <string name="profile_sabados">Sábados</string>
     <string name="profile_festivos">Domingos y festivos</string>
+    <string name="profile_and_season">%1$s · %2$s</string>
 </resources>

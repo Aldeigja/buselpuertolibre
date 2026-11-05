@@ -1,14 +1,15 @@
 package es.elpuertobus.app.map
 
+import es.elpuertobus.app.schedule.PrintedTimetableLine
 import es.elpuertobus.app.schedule.ServiceProfile
+import es.elpuertobus.app.schedule.UpcomingTrip
 
 data class StopSheetUiState(
     val stopId: String,
     val stopName: String,
-    val line: Int,
     val profile: ServiceProfile,
-    val lineClosedToday: Boolean,
-    val nextDepartures: List<Int>,
-    val fullTimetable: List<Int>,
+    val hasPrintedTimetable: Boolean,
+    val trips: List<UpcomingTrip>,
+    val timetable: List<PrintedTimetableLine>,
     val holidayAttribution: String,
 )

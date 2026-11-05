@@ -14,6 +14,14 @@ interface TransitDao {
     )
     suspend fun locatedStops(): List<ItineraryStopEntity>
 
+    @Query(
+        """
+        SELECT * FROM itinerary_stops
+        ORDER BY line, column_side, sequence
+        """,
+    )
+    suspend fun itineraryStops(): List<ItineraryStopEntity>
+
     @Query("SELECT * FROM route_lines ORDER BY line, direction")
     suspend fun routeLines(): List<RouteLineEntity>
 

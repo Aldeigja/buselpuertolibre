@@ -5,6 +5,15 @@
     <string name="season_title">Winter 2026/2027</string>
     <string name="line_label">Line %1$d</string>
     <string name="lines_all">All</string>
+    <string name="tab_overview">Overview</string>
+    <string name="tab_timetable">Timetable</string>
+    <string name="upstream_notice">Times shown are upstream departures. No printed clock for this stop in the official brochure.</string>
+    <string name="from_upstream">from %1$s (%2$d stops earlier)</string>
+    <string name="from_upstream_single">from %1$s (1 stop earlier)</string>
+    <string name="towards_downstream">towards %1$s (first printed stop, %2$d stops ahead)</string>
+    <string name="at_timepoint">at %1$s</string>
+    <string name="left_ago">Left ~%1$d m ago</string>
+    <string name="no_more_today">No more scheduled buses on serving lines today.</string>
     <string name="next_departures">Next departures</string>
     <string name="full_timetable">Full timetable</string>
     <string name="no_printed_clock">This stop has no printed clock in the timetable.</string>
@@ -13,4 +22,5 @@
     <string name="profile_laborables">Weekdays</string>
     <string name="profile_sabados">Saturday</string>
     <string name="profile_festivos">Sunday and holidays</string>
+    <string name="profile_and_season">%1$s · %2$s</string>
 </resources>
