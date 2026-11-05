@@ -111,7 +111,7 @@ Current secret and publish-boundary scans:
 - **CI / clone:** pre-commit (`gitleaks`, actionlint, publish-boundary, merge-conflict, YAML/TOML, large files)
 - **Maintainer:** `python3 scripts/run_repository_security.py` (same hooks plus explicit boundary pass)
 
-Gitleaks reads `.gitleaks.toml`, which extends the default rules shipped in the pinned binary. The local allowlist paths are `.tools/` and `.venv`. Default upstream path skips still apply, including images, fonts, the Gradle wrapper, and `verification-metadata.xml`. Those skips are a scanner limitation, not an approval to hide secrets in those files.
+Gitleaks reads `.gitleaks.toml`, which extends the default rules shipped in the pinned binary. The allowlist skips gitignored local trees (`.tools/`, `.venv/`, `local/`, `__pycache__/`), Gradle caches and `build/` outputs, and `local.properties`. Default upstream path skips still apply, including images, fonts, the Gradle wrapper, and `verification-metadata.xml`. Those skips are a scanner limitation, not an approval to hide secrets in tracked source files.
 
 There is no dependency inventory yet, so these commands are not available:
 

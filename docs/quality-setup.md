@@ -39,7 +39,7 @@ Versions below are the ones this repository executes in CI. The Android compiler
 
 Linux x64 checksums for CI downloads are in `.github/workflows/repository-security.yml`. All platform checksums for local runs are in gitignored `scripts/run_repository_security.py`. A mismatch stops extraction.
 
-Gitleaks trust boundary: the default rules inside the pinned 8.30.1 binary are extended, not replaced. The added allowlist paths are `.tools/` and `.venv`. A custom rule flags absolute user profile paths. Upstream default path skips still drop images, fonts, Gradle wrapper scripts, and `verification-metadata.xml` from the scan. No finding has been waived without review.
+Gitleaks trust boundary: the default rules inside the pinned 8.30.1 binary are extended, not replaced. The allowlist skips gitignored maintainer trees, Gradle `.gradle/` and `build/` outputs, and `local.properties`. A custom rule flags absolute user profile paths in files that are actually scanned. Upstream default path skips still drop images, fonts, Gradle wrapper scripts, and `verification-metadata.xml` from the scan. No finding has been waived without review.
 
 ## 3. Planned checks and module coverage
 
