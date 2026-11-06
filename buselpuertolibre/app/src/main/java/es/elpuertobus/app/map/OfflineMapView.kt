@@ -77,7 +77,7 @@ fun OfflineMapView(
         factory = {
             mapView.apply {
                 getMapAsync { map ->
-                    map.uiSettings.isAttributionEnabled = true
+                    map.uiSettings.isAttributionEnabled = false
                     map.uiSettings.isLogoEnabled = false
                     map.uiSettings.isCompassEnabled = false
                     map.setStyle(Style.Builder().fromJson(localBasemapStyleJson(context))) { style ->

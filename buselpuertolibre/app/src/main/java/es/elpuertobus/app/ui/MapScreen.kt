@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -153,6 +154,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
     }
     val sheetValue = sheetScaffoldState.bottomSheetState.currentValue
     var sheetWasOpen by remember { mutableStateOf(false) }
+    var showAbout by remember { mutableStateOf(false) }
     LaunchedEffect(sheetValue) {
         if (sheetValue != SheetValue.Hidden) {
             sheetWasOpen = true
@@ -226,7 +228,11 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
                         }
                     },
                     onMyLocation = ::onMyLocationClick,
+                    onShowAbout = { showAbout = true },
                     )
+                }
+                if (showAbout) {
+                    AboutBottomSheet(onDismiss = { showAbout = false })
                 }
             } else if (state.errorMessage != null) {
                 Text(
@@ -250,6 +256,7 @@ private fun BoxScope.MapChrome(
     sheetClearance: androidx.compose.ui.unit.Dp,
     onNorth: () -> Unit,
     onMyLocation: () -> Unit,
+    onShowAbout: () -> Unit,
 ) {
     TransitTopFilterBar(
         swatches = swatches,
@@ -284,15 +291,39 @@ private fun BoxScope.MapChrome(
                 .align(Alignment.BottomEnd)
                 .padding(end = 16.dp, bottom = aboveSheet),
     )
-    Text(
-        text = appString(R.string.osm_attribution),
-        style = MaterialTheme.typography.labelSmall,
-        color = TransitColors.Slate400,
+    Surface(
+        onClick = onShowAbout,
         modifier =
             Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 8.dp, bottom = aboveSheet),
-    )
+                .padding(start = 8.dp, bottom = aboveSheet)
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = Color.White.copy(alpha = 0.96f),
+        shadowElevation = 1.dp,
+        tonalElevation = 0.dp,
+        border = BorderStroke(1.dp, TransitColors.Slate200),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Info,
+                contentDescription = appString(R.string.map_attribution_content_description),
+                modifier = Modifier.size(16.dp),
+                tint = TransitColors.Slate500,
+            )
+            Text(
+                text = appString(R.string.osm_attribution),
+                style = MaterialTheme.typography.labelSmall,
+                color = TransitColors.Slate600,
+            )
+        }
+    }
 }
 
 @Composable

@@ -1,4 +1,4 @@
-# Bus El Puerto Libre
+# Horarios Bus El Puerto
 
 Offline map shell for El Puerto de Santa María urban buses. Package `es.elpuertobus.app`.
 

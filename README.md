@@ -1,10 +1,16 @@
-# Bus El Puerto Libre
+# Horarios Bus El Puerto
 
-An offline timetable and route viewer for the urban bus network of El Puerto de Santa María (Cádiz, Spain).
+An offline timetable and map for the urban bus network of El Puerto de Santa María (Cádiz, Spain). Package `es.elpuertobus.app`.
+
+**Play short description**
+
+- Spanish: Horarios y mapa sin conexión de los buses de El Puerto. App independiente.
+- English: Offline bus timetables and map for El Puerto. Independent app.
 
 > **Aviso importante / Important notice:**  
-> Aplicación independiente y **no oficial**. No afiliada al Ayuntamiento ni a la empresa concesionaria.  
-> Independent and **unofficial** application. Not affiliated with the City Council or the municipal transport operator.
+> Herramienta independiente. No es un servicio oficial del Ayuntamiento ni de ninguna administración.  
+> Independent tool. Not an official service of the City Council or any government entity.  
+> Horarios oficiales / Official timetables: https://bus.elpuertodesantamaria.es/horarios.html
 
 ---
 
@@ -18,34 +24,50 @@ An offline timetable and route viewer for the urban bus network of El Puerto de 
 ## Timetable data and accuracy
 
 - **Current dataset:** Winter 2026/2027 official schedules (*horarios de invierno*).
-- **Unscheduled stops:** Where official schedules lack published times for intermediate stops, the app displays times inferred from nearby reference stops along the route. Treat those as approximate estimates.
-- **Holidays:** Sunday and holiday timetables follow the Junta de Andalucía work calendar (Consejería de Empleo, Empresa y Trabajo Autónomo), scoped to province Cádiz and municipality El Puerto de Santa María.
+- **Stops without a printed clock:** The app shows the official time of an earlier stop on the same line, or of a later printed stop when the sheet says so. That time belongs to the named stop. It is not an arrival estimate.
+- **Days:** Saturday uses the Saturday timetable. Sunday, and a holiday on any weekday, uses the Sunday and holiday timetable. Holidays follow the Junta de Andalucía work calendar (Consejería de Empleo, Empresa y Trabajo Autónomo), scoped to province Cádiz and municipality El Puerto de Santa María. Line 6 does not run on Saturday, Sunday, or a holiday. Line 7 does not run on Sunday or a holiday.
 
 ## Limitations
 
 - **No real-time tracking:** No live CAD/AVL feed, vehicle GPS, or delay information.
 - **No multi-modal routing:** No point-to-point trip planner or automated transfer calculations.
 
-## Legal notice and disclaimer / Aviso legal
-
-### Español
-
-Bus El Puerto Libre es un proyecto de código abierto totalmente independiente y de carácter no oficial. No está afiliado, respaldado, contratado ni vinculado al Excmo. Ayuntamiento de El Puerto de Santa María ni a la empresa concesionaria de transporte urbano.
-
-Los horarios mostrados proceden de la información pública general pero son teóricos y pueden sufrir alteraciones sin previo aviso; las horas en paradas intermedias son estimaciones aproximadas basadas en paradas de referencia. Para horarios vigentes en tiempo real, consulte los canales oficiales. Datos cartográficos: © Colaboradores de OpenStreetMap (ODbL).
+## Disclaimer / Aviso
 
 ### English
 
-Bus El Puerto Libre is a completely independent, unofficial open-source project. It is not affiliated with, endorsed by, contracted by, or connected to the City Council of El Puerto de Santa María (*Ayuntamiento*) or the municipal public transport operator.
+This application is an independent tool and is not affiliated with, endorsed by, or operated by the City Council of El Puerto de Santa María or any government entity. It is not an official government service.
 
-The schedules shown are compiled from general public information; they are theoretical and subject to change without notice. Times for intermediate stops are approximate estimates calculated from milestone stops. For authoritative or real-time schedules, please consult official operator channels. Map data: © OpenStreetMap contributors (ODbL).
+Official timetables and service announcements can be consulted at https://bus.elpuertodesantamaria.es/horarios.html.
 
-## Licenses and data attribution
+This app provides an intuitive, offline-friendly interface to easily check urban bus routes, stops, and scheduled departure times in El Puerto de Santa María.
 
-- **Application code:** Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) unless a `LICENSE` file in this repository states otherwise.
-- **Map data:** [© OpenStreetMap contributors](https://www.openstreetmap.org/copyright), licensed under the [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/).
+The schedules in this app are the published winter timetable bundled here. They are theoretical. The operator may change the official timetable without notice. This app keeps the bundled copy until a new version is installed.
+
+### Español
+
+Esta aplicación es una herramienta independiente y no está vinculada, respaldada ni gestionada por el Ayuntamiento de El Puerto de Santa María ni por ninguna administración pública. No es un servicio oficial de la administración.
+
+Los horarios oficiales y los avisos del servicio pueden consultarse en https://bus.elpuertodesantamaria.es/horarios.html.
+
+Esta aplicación ofrece una interfaz clara y sin conexión para consultar las líneas urbanas, las paradas y las horas de salida programadas en El Puerto de Santa María.
+
+Los horarios de esta aplicación son el horario de invierno publicado e incluido aquí. Son teóricos. El operador puede cambiar el horario oficial sin aviso. Esta aplicación conserva la copia incluida hasta que se instale una versión nueva.
+
+## Licensing
+
+```text
+Licensing:
+- Code (app and build pipeline): Apache License 2.0 (see LICENSE)
+- Map Data: © OpenStreetMap contributors (ODbL 1.0)
+- Holiday Calendars: Junta de Andalucía (CC BY 4.0)
+- Timetable Data: Sourced from public timetable at bus.elpuertodesantamaria.es.
+  This data is NOT covered by the Apache-2.0 code license and remains the property
+  of its respective creators.
+```
+
+- **Map data:** [© OpenStreetMap contributors](https://www.openstreetmap.org/copyright), [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/)
 - **Holiday calendars:** [Junta de Andalucía](https://www.juntadeandalucia.es/datosabiertos/portal/) work calendar, Consejería de Empleo, Empresa y Trabajo Autónomo, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Province Cádiz, municipality El Puerto de Santa María.
-- **Timetable information:** Derived from theoretical timetables published publicly at [bus.elpuertodesantamaria.es](https://bus.elpuertodesantamaria.es).
 
 ## Repository layout
 
