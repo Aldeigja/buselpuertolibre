@@ -188,6 +188,7 @@ fun MapScreen(viewModel: MapViewModel = viewModel()) {
                     stopsGeoJson = state.stopsGeoJson,
                     routesGeoJson = state.routesGeoJson,
                     focusedLine = state.focusedLine,
+                    selectedStopId = state.sheet?.stopId,
                     mapReady = mapReady,
                     locationEnabled = locationEnabled,
                     onStopSelected = viewModel::onStopSelected,

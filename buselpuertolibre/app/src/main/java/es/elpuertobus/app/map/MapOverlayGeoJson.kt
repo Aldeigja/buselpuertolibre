@@ -6,7 +6,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 object MapOverlayGeoJson {
-    fun stopsFeatureCollection(stops: List<ItineraryStopEntity>): String {
+    fun stopsFeatureCollection(
+        stops: List<ItineraryStopEntity>,
+        printedStopIds: Set<String>,
+    ): String {
+        val timedNodes = printedStopIds.map(::physicalNode).toSet()
         val features = JSONArray()
         for (stop in stops) {
             val lat = stop.lat ?: continue
@@ -23,8 +27,10 @@ object MapOverlayGeoJson {
                     .put(
                         "properties",
                         JSONObject()
+                            .put("id", stop.stopId)
                             .put("stop_id", stop.stopId)
-                            .put("line", stop.line),
+                            .put("line", stop.line)
+                            .put("has_timetable", physicalNode(stop.stopId) in timedNodes),
                     ),
             )
         }
@@ -73,6 +79,12 @@ object MapOverlayGeoJson {
             .put("type", "FeatureCollection")
             .put("features", features)
             .toString()
+    }
+
+    /** Same tail rule as the timetable's physical stop, so a shared shelter stays timed if any line prints a clock. */
+    private fun physicalNode(stopId: String): String {
+        val tail = stopId.substringAfterLast('_')
+        return if (tail.isNotEmpty() && tail.all { it.isDigit() }) tail else stopId
     }
 
     private fun readParts(line: RouteLineEntity): List<List<DoubleArray>> {

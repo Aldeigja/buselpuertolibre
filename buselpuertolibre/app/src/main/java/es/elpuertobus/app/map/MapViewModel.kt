@@ -103,7 +103,11 @@ class MapViewModel
             holidayAttributionCache = dao.holidayAttribution().orEmpty()
             return MapUiState(
                 ready = true,
-                stopsGeoJson = MapOverlayGeoJson.stopsFeatureCollection(stops),
+                stopsGeoJson =
+                    MapOverlayGeoJson.stopsFeatureCollection(
+                        stops,
+                        departuresCache.orEmpty().map { it.boundStopId }.toSet(),
+                    ),
                 routesGeoJson = MapOverlayGeoJson.routeLinesFeatureCollection(routes),
                 lineSwatches =
                     routes

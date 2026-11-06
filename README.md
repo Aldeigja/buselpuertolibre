@@ -12,6 +12,7 @@ An offline timetable and route viewer for the urban bus network of El Puerto de 
 
 - **Offline-first:** Uses local static timetable and geometry data; requires zero network connectivity at runtime.
 - **Route and stop map:** View active urban lines and stop locations on a bundled municipal basemap.
+- **Stop marks:** A filled navy dot is a stop with its own printed clock. A white dot with a navy edge has no printed clock.
 - **Departure schedules:** Tap a stop to see scheduled departures based on the device clock.
 
 ## Timetable data and accuracy

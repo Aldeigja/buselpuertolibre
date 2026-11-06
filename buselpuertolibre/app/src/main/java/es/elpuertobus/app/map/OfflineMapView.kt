@@ -18,7 +18,6 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
-import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.sources.GeoJsonSource
@@ -32,6 +31,7 @@ fun OfflineMapView(
     stopsGeoJson: String,
     routesGeoJson: String,
     focusedLine: Int?,
+    selectedStopId: String?,
     mapReady: MapReadyHolder,
     locationEnabled: Boolean,
     onStopSelected: (String) -> Unit = {},
@@ -41,6 +41,7 @@ fun OfflineMapView(
     val onStopSelectedState = rememberUpdatedState(onStopSelected)
     val onLineSelectedState = rememberUpdatedState(onLineSelected)
     val focusedLineState = rememberUpdatedState(focusedLine)
+    val selectedStopIdState = rememberUpdatedState(selectedStopId)
     val locationEnabledState = rememberUpdatedState(locationEnabled)
     val clickListenerAttached = remember { AtomicBoolean(false) }
     val context = LocalContext.current
@@ -80,7 +81,13 @@ fun OfflineMapView(
                     map.uiSettings.isLogoEnabled = false
                     map.uiSettings.isCompassEnabled = false
                     map.setStyle(Style.Builder().fromJson(localBasemapStyleJson(context))) { style ->
-                        applyOverlays(style, stopsGeoJson, routesGeoJson, focusedLineState.value)
+                        applyOverlays(
+                            style,
+                            stopsGeoJson,
+                            routesGeoJson,
+                            focusedLineState.value,
+                            selectedStopIdState.value,
+                        )
                         mapReady.map = map
                         mapReady.style = style
                         MapLocation.setEnabled(
@@ -92,30 +99,34 @@ fun OfflineMapView(
                         if (clickListenerAttached.compareAndSet(false, true)) {
                             map.addOnMapClickListener { point ->
                                 val screen = map.projection.toScreenLocation(point)
-                                val stopId =
-                                    map.queryRenderedFeatures(screen, "transit-stops-circle")
-                                        .firstOrNull()
-                                        ?.getStringProperty("stop_id")
-                                if (stopId != null) {
-                                    onStopSelectedState.value(stopId)
-                                } else {
-                                    val reach =
-                                        RectF(
-                                            screen.x - 28f,
-                                            screen.y - 28f,
-                                            screen.x + 28f,
-                                            screen.y + 28f,
-                                        )
-                                    val line =
-                                        map.queryRenderedFeatures(reach, "transit-routes-line")
-                                            .firstOrNull()
-                                            ?.getNumberProperty("line")
-                                            ?.toInt()
-                                    if (line != null) {
-                                        onLineSelectedState.value(line)
-                                    }
+                                val stopHit =
+                                    resolveMarkerTap(
+                                        map,
+                                        screen,
+                                        context.resources.displayMetrics.density,
+                                        onStopSelectedState.value,
+                                    )
+                                if (stopHit) {
+                                    return@addOnMapClickListener true
                                 }
-                                true
+                                val reach =
+                                    RectF(
+                                        screen.x - 28f,
+                                        screen.y - 28f,
+                                        screen.x + 28f,
+                                        screen.y + 28f,
+                                    )
+                                val line =
+                                    map.queryRenderedFeatures(reach, "transit-routes-line")
+                                        .firstOrNull()
+                                        ?.getNumberProperty("line")
+                                        ?.toInt()
+                                if (line != null) {
+                                    onLineSelectedState.value(line)
+                                    true
+                                } else {
+                                    false
+                                }
                             }
                         }
                         map.cameraPosition =
@@ -132,7 +143,7 @@ fun OfflineMapView(
                 map.getStyle { style ->
                     mapReady.map = map
                     mapReady.style = style
-                    applyOverlays(style, stopsGeoJson, routesGeoJson, focusedLine)
+                    applyOverlays(style, stopsGeoJson, routesGeoJson, focusedLine, selectedStopId)
                     MapLocation.setEnabled(map, style, context, locationEnabled)
                 }
             }
@@ -145,17 +156,18 @@ private fun applyOverlays(
     stopsGeoJson: String,
     routesGeoJson: String,
     focusedLine: Int?,
+    selectedStopId: String?,
 ) {
     if (stopsGeoJson.isBlank() || routesGeoJson.isBlank()) {
         return
     }
     val routesSourceId = "transit-routes"
     val stopsSourceId = "transit-stops"
-    listOf(
+    (listOf(
         "transit-routes-line",
         "transit-routes-focus",
         "transit-stops-circle",
-    ).forEach { layerId ->
+    ) + STOP_MARKER_LAYER_IDS).forEach { layerId ->
         if (style.getLayer(layerId) != null) {
             style.removeLayer(layerId)
         }
@@ -185,13 +197,11 @@ private fun applyOverlays(
     style.addLayer(routesLayer)
 
     style.addSource(GeoJsonSource(stopsSourceId, stopsGeoJson))
-    val stopsLayer =
-        CircleLayer("transit-stops-circle", stopsSourceId).withProperties(
-            PropertyFactory.circleRadius(5f),
-            PropertyFactory.circleColor("#dc2626"),
-            PropertyFactory.circleStrokeWidth(4f),
-            PropertyFactory.circleStrokeColor("#ffffff"),
-        )
-    selectedLine()?.let { stopsLayer.withFilter(it) }
-    style.addLayer(stopsLayer)
+    setupStopMarkerLayers(
+        style,
+        legacyStopLayerIds = listOf("transit-stops-circle"),
+        topRouteLayerId = "transit-routes-line",
+        lineFilter = selectedLine(),
+        selectedStopId = selectedStopId,
+    )
 }

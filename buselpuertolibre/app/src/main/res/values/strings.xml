@@ -13,6 +13,7 @@
     <string name="tab_overview">Overview</string>
     <string name="tab_timetable">Timetable</string>
     <string name="upstream_notice">Times shown are upstream departures. No printed clock for this stop in the official brochure.</string>
+    <string name="stop_marks">A filled navy dot is a stop with its own printed clock. A white dot with a navy edge has no printed clock.</string>
     <string name="from_origin">From %1$s</string>
     <string name="schedule_not_distinguished">Separate timetable columns. The snapshot does not name what differs.</string>
     <string name="from_upstream">from %1$s (%2$d stops earlier)</string>
