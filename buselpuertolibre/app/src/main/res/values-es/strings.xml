@@ -23,6 +23,12 @@
     <string name="approximate_pass">Paso aproximado</string>
     <string name="left_ago">Salió hace ~%1$d min</string>
     <string name="in_minutes">en %1$d min</string>
+    <string name="in_one_hour">en 1 hora</string>
+    <string name="in_hours">en %1$d horas</string>
+    <string name="in_one_hour_one_minute">en 1 hora y 1 minuto</string>
+    <string name="in_one_hour_and_minutes">en 1 hora y %1$d minutos</string>
+    <string name="in_hours_and_one_minute">en %1$d horas y 1 minuto</string>
+    <string name="in_hours_and_minutes">en %1$d horas y %2$d minutos</string>
     <string name="due_now">ahora</string>
     <string name="compass_north">Apuntar al norte</string>
     <string name="no_more_today">No hay más salidas programadas hoy en estas líneas.</string>

@@ -17,6 +17,14 @@ class DepartureBoardTest {
         )
 
     @Test
+    fun countdownUsesHoursFromThe61stMinute() {
+        assertEquals(null, DepartureBoard.hourMinuteCountdown(60))
+        assertEquals(HourMinuteCountdown(1, 1), DepartureBoard.hourMinuteCountdown(61))
+        assertEquals(HourMinuteCountdown(2, 0), DepartureBoard.hourMinuteCountdown(120))
+        assertEquals(HourMinuteCountdown(6, 41), DepartureBoard.hourMinuteCountdown(401))
+    }
+
+    @Test
     fun unscheduledStopInterleavesUpstreamClocksByTime() {
         val now = ZonedDateTime.of(2026, 11, 4, 7, 30, 0, 0, zone)
         val result =

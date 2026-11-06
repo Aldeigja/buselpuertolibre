@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import es.elpuertobus.app.R
 import es.elpuertobus.app.map.StopSheetUiState
 import es.elpuertobus.app.schedule.DepartureBoard
+import es.elpuertobus.app.schedule.HourMinuteCountdown
 import es.elpuertobus.app.schedule.PrintedTimetableLine
 import es.elpuertobus.app.schedule.ServiceProfile
 import es.elpuertobus.app.schedule.StopSchedule
@@ -198,6 +200,7 @@ private fun TripRow(trip: UpcomingTrip) {
             if (status != null) {
                 Text(
                     text = status,
+                    modifier = Modifier.widthIn(max = 144.dp),
                     style =
                         MaterialTheme.typography.titleMedium.copy(
                             fontFeatureSettings = "tnum",
@@ -353,10 +356,31 @@ private fun schedulesCollide(
 private fun departureStatus(trip: UpcomingTrip): String? =
     when {
         !trip.isPast && trip.minutesUntil == 0 -> appString(R.string.due_now)
-        !trip.isPast -> appString(R.string.in_minutes, trip.minutesUntil)
+        !trip.isPast -> inCountdown(trip.minutesUntil)
         DepartureBoard.showLeftAgo(trip) -> appString(R.string.left_ago, trip.elapsedMinutes)
         else -> null
     }
+
+@Composable
+private fun inCountdown(totalMinutes: Int): String {
+    val parts = DepartureBoard.hourMinuteCountdown(totalMinutes)
+        ?: return appString(R.string.in_minutes, totalMinutes)
+    return hourMinuteCountdownText(parts)
+}
+
+@Composable
+private fun hourMinuteCountdownText(parts: HourMinuteCountdown): String {
+    val hours = parts.hours
+    val minutes = parts.minutes
+    return when {
+        minutes == 0 && hours == 1 -> appString(R.string.in_one_hour)
+        minutes == 0 -> appString(R.string.in_hours, hours)
+        hours == 1 && minutes == 1 -> appString(R.string.in_one_hour_one_minute)
+        hours == 1 -> appString(R.string.in_one_hour_and_minutes, minutes)
+        minutes == 1 -> appString(R.string.in_hours_and_one_minute, hours)
+        else -> appString(R.string.in_hours_and_minutes, hours, minutes)
+    }
+}
 
 @Composable
 private fun anchorLabel(trip: UpcomingTrip): String =

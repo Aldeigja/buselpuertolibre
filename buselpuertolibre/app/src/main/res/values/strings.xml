@@ -23,6 +23,12 @@
     <string name="approximate_pass">Approximate pass</string>
     <string name="left_ago">Left ~%1$d m ago</string>
     <string name="in_minutes">in %1$d min</string>
+    <string name="in_one_hour">in 1 hour</string>
+    <string name="in_hours">in %1$d hours</string>
+    <string name="in_one_hour_one_minute">in 1 hour and 1 minute</string>
+    <string name="in_one_hour_and_minutes">in 1 hour and %1$d minutes</string>
+    <string name="in_hours_and_one_minute">in %1$d hours and 1 minute</string>
+    <string name="in_hours_and_minutes">in %1$d hours and %2$d minutes</string>
     <string name="due_now">now</string>
     <string name="compass_north">Point north</string>
     <string name="no_more_today">No more scheduled buses on serving lines today.</string>

@@ -49,6 +49,8 @@ data class PrintedTimetableLine(
     val stopsAhead: Int = 0,
 )
 
+data class HourMinuteCountdown(val hours: Int, val minutes: Int)
+
 data class DepartureBoardResult(
     val stopName: String,
     val profile: ServiceProfile,
@@ -231,6 +233,13 @@ object DepartureBoard {
 
     fun showLeftAgo(trip: UpcomingTrip): Boolean =
         trip.isPast && trip.elapsedMinutes <= LEFT_AGO_MAX_MINUTES
+
+    /** Minutes from 61 upward read as hours and minutes. 401 is 6 hours and 41 minutes. */
+    fun hourMinuteCountdown(totalMinutes: Int): HourMinuteCountdown? {
+        if (totalMinutes < 61) return null
+        val hours = totalMinutes / 60
+        return HourMinuteCountdown(hours, totalMinutes - hours * 60)
+    }
 
     private data class Anchor(val index: Int, val stopsAway: Int, val downstream: Boolean)
 
