@@ -35,6 +35,7 @@ ROOT_ALLOWLIST = frozenset(
         ".pre-commit-config.yaml",
         ".cursorignore",
         "CONTRIBUTING.md",
+        "README.md",
     }
 )
 
