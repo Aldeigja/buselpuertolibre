@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches the ring of the round launcher artwork. -->
+    <color name="ic_launcher_background">#FFD0D1CB</color>
+</resources>
