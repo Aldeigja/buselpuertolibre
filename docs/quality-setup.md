@@ -6,7 +6,7 @@ Inspection date: 2026-11-04. Paths below are relative to the repository root unl
 
 ## 1. Repository findings
 
-`buselpuertolibre/` contains the Gradle project: one app module, a wrapper, Kotlin, Compose, Room, and host unit tests. `transit.db` and the municipal PMTiles are gitignored and copied in at build time. They are not in the public tree.
+`buselpuertolibre/` contains the Gradle project: one app module, a wrapper, Kotlin, Compose, Room, and host unit tests. `transit.db` and the municipal PMTiles are published at `buselpuertolibre/app/src/main/assets/`. Gradle refreshes them from gitignored `local/pipeline/` when those sources are present. Timetable PDFs and OSM extracts stay in `local/`.
 
 Absent, so nothing was preserved or duplicated from a prior tree:
 

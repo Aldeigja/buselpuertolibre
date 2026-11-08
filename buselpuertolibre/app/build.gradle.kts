@@ -11,6 +11,8 @@ val repoRoot = rootProject.projectDir.parentFile
 val snapshotDb = repoRoot.resolve("local/pipeline/output/transit.db")
 val snapshotPmtiles = repoRoot.resolve("local/pipeline/assets/el_puerto.pmtiles")
 val assetsDir = layout.projectDirectory.dir("src/main/assets")
+val bundledDb = assetsDir.file("transit.db").asFile
+val bundledPmtiles = assetsDir.file("el_puerto.pmtiles").asFile
 
 android {
     namespace = "es.elpuertobus.app"
@@ -25,12 +27,41 @@ android {
         minSdk = 24
         targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0-phase6"
+        versionName = "1.0.0"
+    }
+
+    val signingPropsFile = repoRoot.resolve("local/maintainer/signing.properties")
+    if (signingPropsFile.isFile) {
+        val props =
+            signingPropsFile
+                .readLines()
+                .mapNotNull { line ->
+                    val trimmed = line.trim()
+                    if (trimmed.isEmpty() || trimmed.startsWith("#")) return@mapNotNull null
+                    val eq = trimmed.indexOf('=')
+                    if (eq <= 0) return@mapNotNull null
+                    trimmed.substring(0, eq).trim() to trimmed.substring(eq + 1).trim()
+                }.toMap()
+        val storePath = props["storeFile"]?.let { repoRoot.resolve(it) }
+        if (storePath != null && storePath.isFile) {
+            signingConfigs {
+                create("release") {
+                    storeFile = storePath
+                    storePassword = props["storePassword"]
+                    keyAlias = props["keyAlias"]
+                    keyPassword = props["keyPassword"]
+                }
+            }
+        }
     }
 
     buildTypes {
         debug {
             isMinifyEnabled = false
+        }
+        release {
+            isMinifyEnabled = false
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
 
@@ -102,15 +133,17 @@ tasks.register<Copy>("copyBasemapPmtiles") {
 tasks.named("preBuild") {
     dependsOn("copyTransitSnapshot", "copyBasemapPmtiles")
     doFirst {
-        if (!snapshotDb.isFile) {
+        if (!snapshotDb.isFile && !bundledDb.isFile) {
             error(
-                "Missing transit snapshot at ${snapshotDb.canonicalPath}. " +
+                "Missing transit snapshot at ${snapshotDb.canonicalPath} " +
+                    "and no committed copy at ${bundledDb.canonicalPath}. " +
                     "Run: PYTHONPATH=pipeline python3 pipeline/run.py --offline",
             )
         }
-        if (!snapshotPmtiles.isFile) {
+        if (!snapshotPmtiles.isFile && !bundledPmtiles.isFile) {
             error(
-                "Missing basemap at ${snapshotPmtiles.canonicalPath}. " +
+                "Missing basemap at ${snapshotPmtiles.canonicalPath} " +
+                    "and no committed copy at ${bundledPmtiles.canonicalPath}. " +
                     "Run: PYTHONPATH=pipeline python3 pipeline/build_basemap.py",
             )
         }

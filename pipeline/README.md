@@ -1,6 +1,6 @@
 # El Puerto Bus data pipeline (milestone 1)
 
-Builds the local database and review files from sources that stay on this machine. `local/` is gitignored. It holds the timetable PDFs, OSM extracts, generated maps, and `transit.db`.
+Builds the local database and review files from sources that stay on this machine. `local/` is gitignored. It holds the timetable PDFs, OSM extracts, and generated review files. The published runtime copies are `buselpuertolibre/app/src/main/assets/transit.db` and `buselpuertolibre/app/src/main/assets/el_puerto.pmtiles`.
 
 - `local/pipeline/data/Horarios_Invierno_2026.pdf` (clocks)
 - `local/pipeline/data/itinerarios.pdf` (stop names and column order)
@@ -42,7 +42,7 @@ Use `--cached data/overpass_raw.json` for offline runs. That path is relative to
 
 ## Outputs
 
-These stay in `local/` and are not committed.
+The pipeline writes these under `local/`. Review files stay unpublished. Gradle copies the database and the basemap into `buselpuertolibre/app/src/main/assets/` when the local files exist, and those two asset copies are committed.
 
 | Path | Role |
 | --- | --- |

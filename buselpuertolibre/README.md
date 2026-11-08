@@ -25,12 +25,25 @@ Requires JDK 21 (Temurin), Android SDK platform **37.0** (`platforms;android-37.
    ./gradlew testDebugUnitTest assembleDebug
    ```
 
-Gradle copies `local/pipeline/output/transit.db` and `local/pipeline/assets/el_puerto.pmtiles` into `app/src/main/assets/` before each build. If either file is missing, the build fails with an explicit message.
+Gradle copies `local/pipeline/output/transit.db` and `local/pipeline/assets/el_puerto.pmtiles` into `app/src/main/assets/` when those local files exist. The copies in `app/src/main/assets/` are committed. A build with neither the local file nor the committed copy fails with an explicit message.
 
 Install on a connected phone (or run `./install-debug.sh` from this directory):
 
 ```bash
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
+
+### Release bundle (Play)
+
+`versionName` is **1.0.0**. Signing reads gitignored `local/maintainer/signing.properties` and `upload-keystore.p12` (create them locally; never commit).
+
+Use JDK 21 (Temurin). If the default JDK is newer, point `JAVA_HOME` at a JDK 21 install. Do not commit that path.
+
+```bash
+cd buselpuertolibre
+./gradlew bundleRelease
+```
+
+The AAB is at `app/build/outputs/bundle/release/app-release.aab`. Without `signing.properties`, `./gradlew assembleRelease` writes an unsigned APK for F-Droid. Install on a phone with `bundletool` (universal APK or connected device). Play Console upload is out of scope until explicitly requested.
 
 Tap a stop on the map to open the timetable sheet (English or Spanish from the phone language). The app reads only bundled assets at runtime; it does not open the pipeline directory.

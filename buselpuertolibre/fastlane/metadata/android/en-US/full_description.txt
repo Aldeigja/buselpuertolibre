@@ -1,0 +1,15 @@
+Offline timetable and map for the urban buses of El Puerto de Santa María.
+
+Winter 2026/2027, in force 31 August 2026 through 30 August 2027.
+
+Saturday has its own timetable. Sunday and a Junta holiday use the festivo columns. Line 6 does not run on Saturday, Sunday, or a festivo. Line 7 does not run on Sunday or a festivo.
+
+A filled navy dot has its own printed clock. A white dot with a navy edge does not. A stop without its own clock shows another stop's official time, not an estimate.
+
+No live vehicles and no trip planner. The app does not use the network. Location, if you allow it, stays on this phone.
+
+Independent tool. Not the City Council, not a government service. Official timetables: https://bus.elpuertodesantamaria.es/horarios.html
+
+Map © OpenStreetMap contributors. Holidays: Junta de Andalucía, CC BY 4.0. The timetable data is not under Apache-2.0.
+
+The build from this store and the build from Google Play are signed with different keys. To switch stores, uninstall the other build first. Your language choice is not carried across.

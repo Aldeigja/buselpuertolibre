@@ -42,6 +42,7 @@ local/
 # Secrets, keys, and skill registry lockfiles
 *.pdf
 *.db
+!buselpuertolibre/app/src/main/assets/transit.db
 *.sqlite
 *.pem
 *.key

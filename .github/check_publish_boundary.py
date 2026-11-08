@@ -157,6 +157,8 @@ def path_allowlisted(rel: str) -> bool:
 
 def path_denied(rel: str) -> str | None:
     rel = _normalize_rel(rel)
+    if rel == "buselpuertolibre/app/src/main/assets/transit.db":
+        return None
     name = Path(rel).name
     if name in DENY_BASENAMES:
         return f"denylisted basename: {name}"

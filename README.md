@@ -77,4 +77,4 @@ Licensing:
 | [`pipeline/`](pipeline/) | Python pipeline that builds the offline database from maintainer-local sources |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to run checks and where build docs live |
 
-Timetable PDFs, OSM extracts, and generated assets are not published in this repository; see [`pipeline/README.md`](pipeline/README.md) and [`buselpuertolibre/README.md`](buselpuertolibre/README.md) for maintainer build steps.
+Timetable PDFs and OSM extracts are not published in this repository. The app ships two runtime files: [`buselpuertolibre/app/src/main/assets/transit.db`](buselpuertolibre/app/src/main/assets/transit.db) and [`buselpuertolibre/app/src/main/assets/el_puerto.pmtiles`](buselpuertolibre/app/src/main/assets/el_puerto.pmtiles). Those files are not under Apache-2.0. The map is © OpenStreetMap contributors (ODbL). See [`pipeline/README.md`](pipeline/README.md) and [`buselpuertolibre/README.md`](buselpuertolibre/README.md) for how a maintainer rebuilds them.

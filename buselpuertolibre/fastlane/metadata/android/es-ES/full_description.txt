@@ -1,0 +1,15 @@
+Horario y mapa sin conexión de los autobuses urbanos de El Puerto de Santa María.
+
+Invierno 2026/2027, en vigor del 31 de agosto de 2026 al 30 de agosto de 2027.
+
+El sábado tiene su propio horario. El domingo y un festivo de la Junta usan las columnas de festivo. La línea 6 no circula sábado, domingo ni festivo. La línea 7 no circula domingo ni festivo.
+
+Un punto azul marino relleno tiene su hora impresa. Un punto blanco con borde azul marino no la tiene. Una parada sin hora propia muestra la hora oficial de otra parada, no una estimación.
+
+Sin vehículos en tiempo real y sin planificador de viajes. La aplicación no usa la red. La ubicación, si la permites, se queda en este teléfono.
+
+Herramienta independiente. No es el Ayuntamiento ni un servicio público. Horarios oficiales: https://bus.elpuertodesantamaria.es/horarios.html
+
+Mapa © colaboradores de OpenStreetMap. Festivos: Junta de Andalucía, CC BY 4.0. Los horarios no están bajo Apache-2.0.
+
+La compilación de esta tienda y la de Google Play están firmadas con claves distintas. Para cambiar de tienda, desinstala antes la otra compilación. La elección de idioma no se conserva.
