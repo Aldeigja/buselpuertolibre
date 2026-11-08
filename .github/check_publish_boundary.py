@@ -207,10 +207,15 @@ def read_worktree_bytes(rel: str) -> bytes | None:
 
 
 def read_tree_bytes(rev: str, rel: str) -> bytes | None:
-    completed = run_git(["show", f"{rev}:{rel}"])
+    completed = subprocess.run(
+        ["git", "show", f"{rev}:{rel}"],
+        cwd=get_root(),
+        check=False,
+        capture_output=True,
+    )
     if completed.returncode != 0:
         return None
-    return completed.stdout.encode()
+    return completed.stdout
 
 
 def scan_content(paths: list[str], rev: str | None) -> list[str]:
