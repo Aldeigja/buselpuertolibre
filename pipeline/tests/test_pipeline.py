@@ -187,6 +187,24 @@ class PipelineIntegrationTest(unittest.TestCase):
             self.assertEqual(station_seq, [(22,)])
             self._assert_bound(conn, 5, "HIJUELAS", "Hijuela del Tío Prieto")
             self._assert_bound(conn, 4, "CREVILLET", "Av. Constitución")
+            noria = conn.execute(
+                """
+                SELECT sequence, stop_name FROM itinerary_stops
+                WHERE line = 4 AND stop_name LIKE 'Pza. Noria%'
+                ORDER BY sequence
+                """
+            ).fetchall()
+            self.assertEqual(
+                noria,
+                [(19, "Pza. Noria"), (24, "Pza. Noria - Golondrina")],
+            )
+            line1_noria = conn.execute(
+                """
+                SELECT stop_name FROM itinerary_stops
+                WHERE line = 1 AND stop_name LIKE 'Pza. Noria%'
+                """
+            ).fetchall()
+            self.assertEqual(line1_noria, [("Pza. Noria",)])
             self._assert_bound(
                 conn, 7, "AMB. ZONA NORTE", "Centro de Salud Pinillo Chico"
             )

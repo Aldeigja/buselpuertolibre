@@ -5,7 +5,11 @@ import unittest
 from pathlib import Path
 
 import extract_osm_bus as osm_bus
-from elpuerto.osm_routes import serve_line1_at_plaza_noria, without_teleported_repeats
+from elpuerto.osm_routes import (
+    place_line4_noria_shelters,
+    serve_line1_at_plaza_noria,
+    without_teleported_repeats,
+)
 
 parse_bus_routes = osm_bus.parse_bus_routes
 parse_line_ref = osm_bus.parse_line_ref
@@ -63,6 +67,74 @@ class Line1NoriaTest(unittest.TestCase):
         self.assertEqual(routes[1]["stops"][0]["osm_node_id"], 13392814811)
         self.assertEqual(routes[2]["stops"][0]["name"], "Pza. Noria - Golondrina")
         self.assertEqual(routes[2]["stops"][1]["stop_sequence"], 24)
+
+
+class Line4NoriaShelterTest(unittest.TestCase):
+    def test_swaps_the_two_shelters_and_keeps_each_leg(self) -> None:
+        golondrina = {
+            "stop_sequence": 19,
+            "sequence_index": 18,
+            "osm_node_id": 13392814811,
+            "name": "Pza. Noria - Golondrina",
+            "lat": 36.593613,
+            "lon": -6.2355833,
+        }
+        noria = {
+            "stop_sequence": 24,
+            "sequence_index": 23,
+            "osm_node_id": 13406610340,
+            "name": "Pza. Noria",
+            "lat": 36.5938536,
+            "lon": -6.2359652,
+        }
+        line2 = dict(golondrina, stop_sequence=15, sequence_index=14)
+        routes = [
+            {"line_ref": "2", "stops": [line2]},
+            {
+                "line_ref": "4",
+                "stops": [dict(golondrina), dict(noria)],
+            },
+        ]
+        place_line4_noria_shelters(routes)
+        earlier, later = routes[1]["stops"]
+        self.assertEqual(earlier["name"], "Pza. Noria")
+        self.assertEqual(earlier["osm_node_id"], 13406610340)
+        self.assertEqual(earlier["stop_sequence"], 19)
+        self.assertEqual(earlier["sequence_index"], 18)
+        self.assertEqual(later["name"], "Pza. Noria - Golondrina")
+        self.assertEqual(later["osm_node_id"], 13392814811)
+        self.assertEqual(later["stop_sequence"], 24)
+        self.assertEqual(later["sequence_index"], 23)
+        self.assertEqual(routes[0]["stops"][0]["osm_node_id"], 13392814811)
+        self.assertEqual(routes[0]["stops"][0]["stop_sequence"], 15)
+        place_line4_noria_shelters(routes)
+        self.assertEqual(routes[1]["stops"][0]["name"], "Pza. Noria")
+        self.assertEqual(routes[1]["stops"][1]["name"], "Pza. Noria - Golondrina")
+
+    def test_line1_still_uses_plaza_noria_after_the_line4_swap(self) -> None:
+        golondrina = {
+            "stop_sequence": 22,
+            "sequence_index": 21,
+            "osm_node_id": 13392814811,
+            "name": "Pza. Noria - Golondrina",
+        }
+        noria = {
+            "stop_sequence": 24,
+            "sequence_index": 23,
+            "osm_node_id": 13406610340,
+            "name": "Pza. Noria",
+        }
+        routes = [
+            {"line_ref": "1", "stops": [dict(golondrina)]},
+            {"line_ref": "4", "stops": [dict(golondrina, stop_sequence=19), dict(noria)]},
+        ]
+        place_line4_noria_shelters(routes)
+        serve_line1_at_plaza_noria(routes)
+        self.assertEqual(routes[0]["stops"][0]["osm_node_id"], 13406610340)
+        self.assertEqual(routes[0]["stops"][0]["name"], "Pza. Noria")
+        self.assertEqual(routes[0]["stops"][0]["stop_sequence"], 22)
+        self.assertEqual(routes[1]["stops"][0]["name"], "Pza. Noria")
+        self.assertEqual(routes[1]["stops"][1]["name"], "Pza. Noria - Golondrina")
 
 
 class ParseLineRefTest(unittest.TestCase):

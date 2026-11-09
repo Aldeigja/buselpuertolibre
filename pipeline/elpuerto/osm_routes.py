@@ -14,8 +14,9 @@ from elpuerto.models import ColumnSide, ItineraryStop
 _TELEPORT_HOP_M = 2_000.0
 _SAME_SHELTER_M = 100.0
 
-# Line 1's relation lists Pza. Noria - Golondrina. The bus stops at Pza. Noria,
-# the platform Line 4 uses on the way to San Bartolomé.
+# Line 1's relation lists Pza. Noria - Golondrina. The bus stops at Pza. Noria.
+# On line 4 that shelter is the Plaza de España → Av. Constitución side.
+# Pza. Noria - Golondrina is the return from Av. Constitución toward San Bartolomé.
 _L1_LISTED_AT_GOLONDRINA = 13392814811
 _L1_STOPS_AT_NORIA = 13406610340
 
@@ -58,7 +59,9 @@ def map_path(curation: Path) -> Path:
 def load_route_stops(path: Path) -> list[ItineraryStop]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     stops: list[ItineraryStop] = []
-    for route in serve_line1_at_plaza_noria(payload.get("routes", [])):
+    routes = payload.get("routes", [])
+    place_line4_noria_shelters(routes)
+    for route in serve_line1_at_plaza_noria(routes):
         line = int(route["line_ref"])
         direction = str(route.get("direction") or "outbound")
         column = ColumnSide.RIGHT if direction == "inbound" else ColumnSide.LEFT
@@ -88,6 +91,51 @@ def load_route_stops(path: Path) -> list[ItineraryStop]:
     if missing:
         raise RuntimeError(f"OSM routes missing lines: {sorted(missing)}")
     return stops
+
+
+def place_line4_noria_shelters(routes: list[dict]) -> list[dict]:
+    """Put each Plaza de la Noria shelter on the leg the bus actually uses.
+
+    Line 4 passes the square twice. From Plaza de España it stops at Pza. Noria,
+    then Av. Constitución. Coming back from Av. Constitución it stops at
+    Pza. Noria - Golondrina, then San Bartolomé. The OSM relation lists those
+    two shelters the other way around. Sequence numbers stay with the leg.
+    """
+    for route in routes:
+        if str(route.get("line_ref")) != "4":
+            continue
+        stops = route.get("stops", [])
+        golondrina = _first_node(stops, _L1_LISTED_AT_GOLONDRINA)
+        noria = _first_node(stops, _L1_STOPS_AT_NORIA)
+        if golondrina is None or noria is None or golondrina > noria:
+            continue
+        _exchange_keeping_sequence(stops, golondrina, noria)
+    return routes
+
+
+def _first_node(stops: list[dict], node_id: int) -> int | None:
+    for index, stop in enumerate(stops):
+        if int(stop.get("osm_node_id") or 0) == node_id:
+            return index
+    return None
+
+
+def _exchange_keeping_sequence(stops: list[dict], earlier: int, later: int) -> None:
+    first = stops[earlier]
+    second = stops[later]
+    placed_first = dict(second)
+    placed_second = dict(first)
+    for key in ("stop_sequence", "sequence_index"):
+        if key in first:
+            placed_first[key] = first[key]
+        else:
+            placed_first.pop(key, None)
+        if key in second:
+            placed_second[key] = second[key]
+        else:
+            placed_second.pop(key, None)
+    stops[earlier] = placed_first
+    stops[later] = placed_second
 
 
 def serve_line1_at_plaza_noria(routes: list[dict]) -> list[dict]:
