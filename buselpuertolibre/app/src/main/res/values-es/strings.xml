@@ -33,8 +33,8 @@
     <string name="about_limits_line1">Sin posición de los autobuses y sin retrasos de tráfico.</string>
     <string name="about_limits_line2">Sin planificador de viajes y sin transbordos.</string>
     <string name="about_section_sources">Fuentes</string>
-    <string name="about_sources_line1">Horas: PDF de invierno, bus.elpuertodesantamaria.es. Temporada del 31 de agosto de 2026 al 30 de agosto de 2027.</string>
-    <string name="about_sources_line2">Nombres y orden de paradas: www.elpuertodesantamaria.es.</string>
+    <string name="about_sources_line1">Horas: horario en https://bus.elpuertodesantamaria.es/. Temporada del 31 de agosto de 2026 al 30 de agosto de 2027.</string>
+    <string name="about_sources_line2">Nombres de paradas: OpenStreetMap. Orden: OpenStreetMap y www.elpuertodesantamaria.es.</string>
     <string name="about_sources_line3">Datos del mapa © Colaboradores de OpenStreetMap, ODbL. Dibujo del mapa: MapLibre. Iconos de lugares: OSM Liberty / Maki, CC0 1.0. Rótulos del mapa: Noto Sans.</string>
     <string name="about_sources_line4">Festivos: calendario laboral de la Junta de Andalucía, Consejería de Empleo, Empresa y Trabajo Autónomo, CC BY 4.0. Provincia de Cádiz, municipio de El Puerto de Santa María.</string>
     <string name="about_section_version">Versión</string>

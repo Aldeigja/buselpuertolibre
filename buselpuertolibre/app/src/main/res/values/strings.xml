@@ -33,8 +33,8 @@
     <string name="about_limits_line1">No live positions and no traffic delays.</string>
     <string name="about_limits_line2">No trip planner and no transfers.</string>
     <string name="about_section_sources">Sources</string>
-    <string name="about_sources_line1">Clocks: winter timetable PDF, bus.elpuertodesantamaria.es. Season 31 August 2026–30 August 2027.</string>
-    <string name="about_sources_line2">Stop names and order: www.elpuertodesantamaria.es.</string>
+    <string name="about_sources_line1">Clocks: timetable at https://bus.elpuertodesantamaria.es/. Season 31 August 2026–30 August 2027.</string>
+    <string name="about_sources_line2">Stop names: OpenStreetMap. Order: OpenStreetMap and www.elpuertodesantamaria.es.</string>
     <string name="about_sources_line3">Map data © OpenStreetMap contributors, ODbL. Map drawing by MapLibre. Place icons: OSM Liberty / Maki, CC0 1.0. Map labels: Noto Sans.</string>
     <string name="about_sources_line4">Holidays: Junta de Andalucía work calendar, Consejería de Empleo, Empresa y Trabajo Autónomo, CC BY 4.0. Province Cádiz, municipality El Puerto de Santa María.</string>
     <string name="about_section_version">Version</string>
